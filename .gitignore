@@ -130,3 +130,5 @@ dmypy.json
 
 FISH_spots/
 FISH_spots
+
+*.tfevents.*
