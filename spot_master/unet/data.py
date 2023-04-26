@@ -13,7 +13,7 @@ import skimage.morphology as morphology  # noqa: F401
 class FISHSpotsDataset(Dataset):
     def __init__(
             self, meta_csv, root_dir,
-            spot_footprint='morphology.disk(3)',
+            spot_footprint='morphology.disk(2)',
             transform=None):
         self.meta_data = pd.read_csv(meta_csv)
         self.root_dir = root_dir
