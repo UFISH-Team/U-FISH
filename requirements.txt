@@ -1,3 +1,9 @@
+numpy
+scipy
+pandas
+matplotlib
 pytorch
+torchvision
 scikit-image
 scikit-learn
+fire

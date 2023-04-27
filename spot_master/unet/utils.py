@@ -6,9 +6,6 @@ class DiceLoss(nn.Module):
     def __init__(self):
         super(DiceLoss, self).__init__()
 
-    def _one_hot_encoder(self, input_tensor):
-        return (input_tensor == 1).float()
-
     def _dice_loss(self, score, target):
         target = target.float()
         smooth = 1e-5
@@ -20,7 +17,6 @@ class DiceLoss(nn.Module):
         return loss
 
     def forward(self, inputs, target):
-        target = self._one_hot_encoder(target)
         return self._dice_loss(inputs, target)
 
 

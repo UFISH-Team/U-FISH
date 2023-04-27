@@ -132,3 +132,4 @@ FISH_spots/
 FISH_spots
 
 *.tfevents.*
+*.pth

@@ -1,3 +1,4 @@
+import typing as T
 import os
 import random
 import pandas as pd
@@ -33,7 +34,7 @@ class FISHSpotsDataset(Dataset):
 
         coord_path = os.path.join(self.root_dir, self.meta_data.iloc[idx, 1])
         coordinates = pd.read_csv(coord_path)
-        mask = self.coords_to_mask(coordinates, image.shape)
+        mask = self.coords_to_mask(coordinates, image.shape[1:])
 
         sample = {'image': image, 'mask': mask}
 
@@ -42,8 +43,7 @@ class FISHSpotsDataset(Dataset):
 
         return sample
 
-    def coords_to_mask(self, coords, shape):
-        shape = shape[1:]
+    def coords_to_mask(self, coords: pd.DataFrame, shape: T.Tuple[int, int]):
         mask = np.zeros(shape, dtype=np.uint8)
         for _, row in coords.iterrows():
             y, x = int(row['axis-0']), int(row['axis-1'])
@@ -62,7 +62,7 @@ class RandomHorizontalFlip:
         image, mask = sample['image'], sample['mask']
         if random.random() < self.p:
             image = np.flip(image, axis=2)
-            mask = np.flip(mask, axis=1)
+            mask = np.flip(mask, axis=2)
         return {'image': image, 'mask': mask}
 
 
@@ -77,8 +77,8 @@ class RandomRotation:
             image, angle, axes=(1, 2),
             mode='reflect', order=1, reshape=False)
         mask = rotate(
-            mask, angle, mode='reflect',
-            order=0, reshape=False)
+            mask, angle, axes=(1, 2),
+            mode='reflect', order=1, reshape=False)
         return {'image': image, 'mask': mask}
 
 
