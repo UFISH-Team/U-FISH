@@ -1,5 +1,7 @@
 # SpotMaster
 
+The dataset and models for FISH spot detection.
+
 ## Dataset
 
 The dataset is available at [HuggingFace Datasets](https://huggingface.co/datasets/GangCaoLab/FISH_spots).
@@ -8,8 +10,10 @@ The dataset is available at [HuggingFace Datasets](https://huggingface.co/datase
 # Make sure you have git-lfs installed (https://git-lfs.com)
 git lfs install
 git clone https://huggingface.co/datasets/GangCaoLab/FISH_spots
-
-# if you want to clone without large files – just their pointers
-# prepend your git clone with the following env var:
-GIT_LFS_SKIP_SMUDGE=1
 ```
+
+## Models
+
+| Model | Category | Description | 
+| --- | --- | --- |
+| U-Net | Deep Learning, Segmentation based | U-Net model trained on FISH spot images. |
