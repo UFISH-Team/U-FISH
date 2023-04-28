@@ -1,7 +1,6 @@
 import typing as T
 
 import torch
-import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 from torch import Tensor
@@ -62,10 +61,6 @@ def train(
                 writer.add_scalar(
                     "Loss/train_batch", loss.item(),
                     epoch * len(train_loader) + idx)
-                img = images[0, 0].cpu().numpy()
-                img = np.stack((img,)*3, axis=0)
-                # normalize to 0-255
-                img = (img - img.min()) / (img.max() - img.min()) * 255
                 # record images
                 writer.add_image(
                     "Image/input", images[0], epoch * len(train_loader) + idx)
