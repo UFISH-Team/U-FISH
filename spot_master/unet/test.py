@@ -11,12 +11,12 @@ from f1score import compute_metrics
 model = UNet(1,1,4)
 model.load_state_dict(torch.load('./best_unet_model_after_fine_tuning.pth', map_location=torch.device('cpu')))
 
-root_dir = '/home/hycai/pytorch/SpotMaster-main/spot_master/FISH_spots/'
-meta_data = pd.read_csv('/home/hycai/pytorch/SpotMaster-main/notebooks/meta_test.csv')
+root_dir = '/SpotMaster-main/spot_master/FISH_spots/'
+meta_data = pd.read_csv('/SpotMaster-main/notebooks/meta_test.csv')
 
 img_dir = meta_data.iloc[:, 0].tolist()
 marker_dir = meta_data.iloc[:, 1].tolist()
-predict_dir = '/home/hycai/pytorch/SpotMaster-main/spot_master/unet/predict/'
+predict_dir = '/SpotMaster-main/spot_master/unet/predict/'
 
 def pred(im):
     im_t = torch.tensor(im, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
