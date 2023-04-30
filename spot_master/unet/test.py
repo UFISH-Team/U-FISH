@@ -1,10 +1,12 @@
 import os
-from skimage.feature import peak_local_max
 import torch
+import pandas as pd
+
 from model import UNet
 from skimage.io import imread
-import pandas as pd
+from skimage.feature import peak_local_max
 from f1score import compute_metrics
+
 
 model = UNet(1,1,4)
 model.load_state_dict(torch.load('./best_unet_model_after_fine_tuning.pth', map_location=torch.device('cpu')))
