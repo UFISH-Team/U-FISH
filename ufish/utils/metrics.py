@@ -1,8 +1,7 @@
 """
 Copy from the deepblink project:
 https://github.com/BBQuercus/deepBlink/blob/master/deepblink/metrics.py
-
-Functions to calculate training loss on single image."""
+"""
 
 from typing import List, Optional, Tuple, Union
 import warnings
@@ -15,20 +14,23 @@ EPS = 1e-12
 
 
 def euclidean_dist(x1: float, y1: float, x2: float, y2: float) -> float:
-    """Return the euclidean distance between two the points (x1, y1) and (x2, y2)."""
+    """Return the euclidean distance between
+    two the points (x1, y1) and (x2, y2)."""
     return np.sqrt(np.square(x1 - x2) + np.square(y1 - y2))
 
 
 def offset_euclidean(offset: List[tuple]) -> np.ndarray:
-    """Calculates the euclidean distance based on row_column_offsets per coordinate."""
+    """Calculates the euclidean distance
+    based on row_column_offsets per coordinate."""
     return np.sqrt(np.sum(np.square(np.array(offset)), axis=-1))
 
 
 def precision_score(pred: np.ndarray, true: np.ndarray) -> float:
     """Precision score metric.
 
-    Defined as ``tp / (tp + fp)`` where tp is the number of true positives and fp the number of false positives.
-    Can be interpreted as the accuracy to not mislabel samples or how many selected items are relevant.
+    Defined as ``tp / (tp + fp)`` where tp is the number of true positives
+    and fp the number of false positives.  Can be interpreted as the accuracy
+    to not mislabel samples or how many selected items are relevant.
     The best value is 1 and the worst value is 0.
 
     NOTE – direction dependent, arguments cant be switched!!
@@ -45,8 +47,10 @@ def precision_score(pred: np.ndarray, true: np.ndarray) -> float:
 def recall_score(pred: np.ndarray, true: np.ndarray) -> float:
     """Recall score metric.
 
-    Defined as ``tp / (tp + fn)`` where tp is the number of true positives and fn the number of false negatives.
-    Can be interpreted as the accuracy of finding positive samples or how many relevant samples were selected.
+    Defined as ``tp / (tp + fn)`` where tp is the number
+        of true positives and fn the number of false negatives.
+    Can be interpreted as the accuracy of finding positive samples
+        or how many relevant samples were selected.
     The best value is 1 and the worst value is 0.
 
     NOTE – direction dependent, arguments cant be switched!!
@@ -143,7 +147,8 @@ def f1_integral(
         true: Array of shape (n, 2) for ground truth coordinates.
         mdist: Maximum cutoff distance to calculate F1. Defaults to None.
         n_cutoffs: Number of intermediate cutoff steps. Defaults to 50.
-        return_raw: If True, returns f1_scores, offsets, and cutoffs. Defaults to False.
+        return_raw: If True, returns f1_scores, offsets, and cutoffs.
+        Defaults to False.
 
     Returns:
         By default returns a single value in the f1_integral score.
@@ -153,30 +158,40 @@ def f1_integral(
         * cutoffs: A list of all cutoffs used
 
     Notes:
-        Scipy.spatial.distance.cdist((xa*n), (xb*n)) returns a matrix of shape (xa*xb). Here we use
-        pred as xa and true as xb. This means that the matrix has all true coordinates along the row axis
-        and all pred coordinates along the column axis. It's transpose has the opposite. The linear assignment
-        takes in a cost matrix and returns the coordinates to assigned costs which fall below a defined cutoff.
-        This assigment takes the rows as reference and assignes columns to them. Therefore, the transpose
-        matrix resulting in row and column coordinates named "true_pred_r" and "true_pred_c" respectively
-        uses true (along matrix row axis) as reference and pred (along matrix column axis) as assigments.
-        In other terms the assigned predictions that are close to ground truth coordinates. To now calculate
-        the offsets, we can use the "true_pred" rows and columns to find the originally referenced coordinates.
-        As mentioned, the matrix has true along its row axis and pred along its column axis.
-        Thereby we can use basic indexing. The [0] and [1] index refer to the coordinates' row and column value.
-        This offset is now used two-fold. Once to plot the scatter pattern to make sure models aren't biased
-        in one direction and secondly to compute the euclidean distance.
+        Scipy.spatial.distance.cdist((xa*n), (xb*n)) returns a matrix
+        of shape (xa*xb). Here we use pred as xa and true as xb. This means
+        that the matrix has all true coordinates along the row axis and all
+        pred coordinates along the column axis. It's transpose
+        has the opposite.  The linear assignment takes in a cost
+        matrix and returns the coordinates to assigned costs which
+        fall below a defined cutoff.  This assigment takes the rows
+        as reference and assignes columns to them. Therefore, the transpose
+        matrix resulting in row and column coordinates named "true_pred_r"
+        and "true_pred_c" respectively uses true (along matrix row axis)
+        as reference and pred (along matrix column axis) as assigments.
+        In other terms the assigned predictions that are close to
+        ground truth coordinates. To now calculate the offsets, we can use
+        the "true_pred" rows and columns to find the originally referenced
+        coordinates.  As mentioned, the matrix has true along its row axis
+        and pred along its column axis.  Thereby we can use basic indexing.
+        The [0] and [1] index refer to the coordinates' row and column value.
+        This offset is now used two-fold. Once to plot the scatter
+        pattern to make sure models aren't biased in one direction and
+        secondly to compute the euclidean distance.
 
-        The euclidean distance could not simply be summed up like with the F1 score because the different
-        cutoffs actively influence the maximum euclidean distance score. Here, instead, we sum up all
-        distances measured across every cutoff and then dividing by the total number of assigned coordinates.
-        This automatically weighs models with more detections at lower cutoff scores.
+        The euclidean distance could not simply be summed up like with
+        the F1 score because the different cutoffs actively influence the
+        maximum euclidean distance score. Here, instead, we sum up all
+        distances measured across every cutoff and then dividing by the
+        total number of assigned coordinates.  This automatically weighs
+        models with more detections at lower cutoff scores.
     """
     cutoffs = np.linspace(start=0, stop=mdist, num=n_cutoffs)
 
     if pred.size == 0 or true.size == 0:
         warnings.warn(
-            f"Pred ({pred.shape}) and true ({true.shape}) must have size != 0.",
+            f"Pred ({pred.shape}) and true"
+            f"({true.shape}) must have size != 0.",
             RuntimeWarning,
         )
         return 0.0 if not return_raw else (np.zeros(50), np.zeros(50), cutoffs)
@@ -184,7 +199,10 @@ def f1_integral(
     matrix = scipy.spatial.distance.cdist(pred, true, metric="euclidean")
 
     if not return_raw:
-        f1_scores = [_f1_at_cutoff(matrix, pred, true, cutoff) for cutoff in cutoffs]
+        f1_scores = [
+            _f1_at_cutoff(matrix, pred, true, cutoff)
+            for cutoff in cutoffs
+        ]
         return np.trapz(f1_scores, cutoffs) / mdist  # Norm. to 0-1
 
     f1_scores = []
@@ -211,7 +229,8 @@ def _get_offsets(
         cols: Columns of the assigned coordinates (along "pred"-axis).
     """
     return [
-        (true[r][0] - pred[c][0], true[r][1] - pred[c][1]) for r, c in zip(rows, cols)
+        (true[r][0] - pred[c][0], true[r][1] - pred[c][1])
+        for r, c in zip(rows, cols)
     ]
 
 
@@ -226,8 +245,9 @@ def _f1_at_cutoff(
     """Compute a single F1 value at a given cutoff.
 
     Args:
-        matrix: Cost matrix (euclidean distances) mapping true coordinates onto predicted
-            coordinates. I.e. true along row-axis and pred along column-axis.
+        matrix: Cost matrix (euclidean distances) mapping true coordinates
+            onto predicted coordinates.
+            I.e. true along row-axis and pred along column-axis.
         pred: List of all predicted coordinates.
         true: List of all ground truth coordinates.
         cutoff: Single value to threshold cost values for assignments.
@@ -235,12 +255,15 @@ def _f1_at_cutoff(
             true_pred_r, and true_pred_c explained below. Defaults to False.
 
     Returns:
-        By default returns a single value in the f1 score at the specified cutoff.
+        By default returns a single value in the f1 score
+            at the specified cutoff.
         If return_raw is True, a tuple containing:
         * f1_score: As by default.
-        * true_pred_r: The rows from the true<-pred assignment. I.e. the indices of the
+        * true_pred_r: The rows from the true<-pred assignment.
+            I.e. the indices of the
             true coordinates that have assigned pred coordinates.
-        * true_pred_c: The columns from the true<-pred assignment. I.e. the indices of the
+        * true_pred_c: The columns from the true<-pred assignment.
+            I.e. the indices of the
             pred coordinates that were assigned to true coordinates.
     """
     # Cannot assign coordinates on empty matrix
@@ -274,18 +297,22 @@ def compute_metrics(
     Args:
         pred: Predicted set of coordinates.
         true: Ground truth set of coordinates.
-        mdist: Maximum euclidean distance in px to which F1 scores will be calculated.
+        mdist: Maximum euclidean distance
+            in px to which F1 scores will be calculated.
 
     Returns:
         DataFrame with one row per cutoff containing columns for:
-            * f1_score: Harmonic mean of precision and recall based on the number of coordinates
+            * f1_score: Harmonic mean of precision and recall
+                based on the number of coordinates
                 found at different distance cutoffs (around ground truth).
             * abs_euclidean: Average euclidean distance at each cutoff.
             * offset: List of (r, c) coordinates denoting offset in pixels.
             * f1_integral: Area under curve f1_score vs. cutoffs.
-            * mean_euclidean: Normalized average euclidean distance based on the total number of assignments.
+            * mean_euclidean: Normalized average euclidean distance based
+                on the total number of assignments.
     """
-    f1_scores, offsets, cutoffs = f1_integral(pred, true, mdist=mdist, n_cutoffs=50, return_raw=True)  # type: ignore
+    f1_scores, offsets, cutoffs = f1_integral(
+        pred, true, mdist=mdist, n_cutoffs=50, return_raw=True)  # type: ignore
 
     abs_euclideans = []
     total_euclidean = 0
@@ -308,7 +335,8 @@ def compute_metrics(
             "offset": offsets,
         }
     )
-    df["f1_integral"] = np.trapz(df["f1_score"], cutoffs) / mdist  # Norm. to 0-1
+    # Norm. to 0-1
+    df["f1_integral"] = np.trapz(df["f1_score"], cutoffs) / mdist
     df["mean_euclidean"] = total_euclidean / (total_assignments + 1e-10)
 
     return df

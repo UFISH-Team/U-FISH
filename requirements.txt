@@ -7,3 +7,4 @@ torchvision
 scikit-image
 scikit-learn
 fire
+loguru
