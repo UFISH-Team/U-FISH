@@ -37,8 +37,13 @@ def call_spots(
     dense_regions = np.zeros_like(binary_image, dtype=np.uint8)
     for region in regions:
         if region.area > cc_size_threshold:
-            ind = tuple(region.coords)
-            dense_regions[ind] = 1
+            coords = region.coords
+            if ndim == 2:
+                dense_regions[coords[:, 0], coords[:, 1]] = 1
+            elif ndim == 3:
+                dense_regions[coords[:, 0], coords[:, 1], coords[:, 2]] = 1
+            else:
+                raise ValueError('Only 2D and 3D images are supported.')
         else:
             centroids_sparse.append(region.centroid)
     centroids_dense = call_dense_region(dense_regions)

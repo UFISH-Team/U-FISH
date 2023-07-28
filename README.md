@@ -6,10 +6,10 @@ The underlying concept of our method, U-FISH, acknowledges the significant varia
 
 ## TODO List
 
-- [ ] API
+- [x] API
+- [ ] CLI
 - [ ] Utils
     + [ ] Plotting tool for show TP, FP, FN
-- [ ] CLI
 - [ ] Napari plugin
 - [ ] Add more datasets
     + [ ] MER-FISH
@@ -28,6 +28,26 @@ The underlying concept of our method, U-FISH, acknowledges the significant varia
 
 ```bash
 pip install u-fish
+```
+
+API for inference and evaluation:
+
+```python
+from skimage import io
+from ufish.api import UFish
+
+ufish = UFish()
+ufish.load_weights("path/to/weights")  # loading model weights
+# or download from huggingface:
+# ufish.load_weights_from_internet()
+
+# inference
+img = io.imread("path/to/image")
+spots = ufish.predict(img)
+
+# evaluate
+true_spots = pd.read_csv("path/to/true_spots.csv")
+metrics = ufish.evaluate_result(spots, true_spots)
 ```
 
 ## Dataset
