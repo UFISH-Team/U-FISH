@@ -20,7 +20,8 @@ class ConvBlock(nn.Module):
 class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(ResidualBlock, self).__init__()
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
+        self.conv = nn.Conv2d(
+            in_channels, out_channels, kernel_size=3, padding=1)
         self.BN = nn.BatchNorm2d(out_channels)
         self.relu = nn.ReLU(inplace=True)
 
@@ -31,6 +32,7 @@ class ResidualBlock(nn.Module):
         out = x+out
 
         return out
+
 
 class DownConv(nn.Module):
     def __init__(self, in_channels, out_channels):
@@ -44,28 +46,19 @@ class DownConv(nn.Module):
         out = self.resconv(out)
         return out
 
+
 class UpConv(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(UpConv, self).__init__()
-        # self.upconv = nn.ConvTranspose2d(
-        #     in_channels, out_channels, kernel_size=2, stride=2)
         self.upconv = nn.Conv2d(
             in_channels, out_channels, kernel_size=3, stride=1, padding=1)
-        # self.upconv = nn.Conv2d(
-        #     in_channels, out_channels, kernel_size=2, stride=2)
-        # self.resconv = ResidualBlock(out_channels, out_channels)
-
-    # def forward(self, x):
-    #     out = self.upconv(x)
-    #     out = self.resconv(out)
-    #     return out
 
     def forward(self, x):
         up = F.interpolate(x, scale_factor=2, mode='nearest')
         out = self.upconv(up)
         return out
 
-# CBAM
+
 class ChannelAttention(nn.Module):
     def __init__(self, input_nc, ratio=16):
         super(ChannelAttention, self).__init__()
@@ -88,7 +81,6 @@ class SpatialAttention(nn.Module):
         super(SpatialAttention, self).__init__()
         assert kernel_size in (3, 7), 'kernel size must be 3 or 7'
         padding = 3 if kernel_size == 7 else 1
-        # (特征图的大小-算子的size+2*padding)/步长+1
         self.conv = nn.Conv2d(2, 1, kernel_size, padding=padding, bias=False)
         self.sigmoid = nn.Sigmoid()
 
@@ -105,7 +97,8 @@ class SpatialAttention(nn.Module):
 
 class CBAM(nn.Module):
     # CSP Bottleneck with 3 convolutions
-    def __init__(self, input_nc, ratio=16, kernel_size=7):  # ch_in, ch_out, number, shortcut, groups, expansion
+    # ch_in, ch_out, number, shortcut, groups, expansion
+    def __init__(self, input_nc, ratio=16, kernel_size=7):
         super(CBAM, self).__init__()
         self.channel_attention = ChannelAttention(input_nc, ratio)
         self.spatial_attention = SpatialAttention(kernel_size)
@@ -116,6 +109,7 @@ class CBAM(nn.Module):
         # c*h*w * 1*h*w
         out = self.spatial_attention(out) * out
         return out
+
 
 class UNet(nn.Module):
     def __init__(
@@ -138,21 +132,12 @@ class UNet(nn.Module):
             base_channels * 2 ** (num_layers)
         )
 
-        # self.decoders = nn.ModuleList()
-        # self.upsamples = nn.ModuleList()
-        # for i in range(num_layers, 0, -1):
-        #     input_channels = base_channels * 2 ** i
-        #     output_channels = base_channels * 2 ** (i - 1)
-        #
-        #     self.decoders.append(ConvBlock(input_channels, output_channels))
-        #     self.upsamples.append(UpConv(input_channels, output_channels))
         self.decoders = nn.ModuleList()
         self.upsamples = nn.ModuleList()
         self.cbams = nn.ModuleList()
         for i in range(num_layers, 0, -1):
             input_channels = base_channels * 2 ** i
             output_channels = base_channels * 2 ** (i - 1)
-
             self.decoders.append(ConvBlock(input_channels, output_channels))
             self.upsamples.append(UpConv(input_channels, output_channels))
             self.cbams.append(CBAM(output_channels))
