@@ -9,6 +9,7 @@ import warnings
 import numpy as np
 import pandas as pd
 import scipy.optimize
+import scipy.spatial.distance
 
 EPS = 1e-12
 
@@ -200,7 +201,7 @@ def f1_integral(
 
     if not return_raw:
         f1_scores = [
-            _f1_at_cutoff(matrix, pred, true, cutoff)
+            f1_at_cutoff(matrix, pred, true, cutoff)
             for cutoff in cutoffs
         ]
         return np.trapz(f1_scores, cutoffs) / mdist  # Norm. to 0-1
@@ -208,7 +209,7 @@ def f1_integral(
     f1_scores = []
     offsets = []
     for cutoff in cutoffs:
-        f1_value, rows, cols = _f1_at_cutoff(
+        f1_value, rows, cols = f1_at_cutoff(
             matrix, pred, true, cutoff, return_raw=True
         )
         f1_scores.append(f1_value)
@@ -235,7 +236,7 @@ def _get_offsets(
 
 
 # TODO - find suitable return type Union[float, tuple] does not work
-def _f1_at_cutoff(
+def f1_at_cutoff(
     matrix: np.ndarray,
     pred: np.ndarray,
     true: np.ndarray,
