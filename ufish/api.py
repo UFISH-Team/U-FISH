@@ -5,11 +5,15 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
-from loguru import logger
 
 from .unet.model import UNet
 from .calling import call_spots
 from .utils.metrics import compute_metrics
+from .utils.plot import plot_result, plot_evaluate
+from .utils.log import logger
+
+if T.TYPE_CHECKING:
+    from matplotlib.figure import Figure
 
 
 BASE_STORE_URL = 'https://huggingface.co/GangCaoLab/U-FISH/resolve/main/'
@@ -91,19 +95,26 @@ class UFish():
     def pred_2d(
             self, img: np.ndarray,
             cc_size_thresh: int = 18,
-            ) -> pd.DataFrame:
+            return_enhanced_img: bool = False,
+            ) -> T.Union[pd.DataFrame, T.Tuple[pd.DataFrame, np.ndarray]]:
         """Predict the spots in a 2D image.
 
         Args:
             img: The 2D image to predict.
             cc_size_thresh: Connected component size threshold.
+            return_enhanced_img: Whether to return the enhanced image.
 
         Returns:
-            A pandas dataframe with columns ['axis-0', 'axis-1']."""
+            spots_df: A pandas dataframe containing the spots.
+            enhanced_img: The enhanced image. if return_enhanced_img is True.
+        """
         assert img.ndim == 2, 'Image must be 2D.'
         enhanced_img = self.enhance_img(img)
         df = call_spots(enhanced_img, cc_size_thresh)
-        return df
+        if return_enhanced_img:
+            return df, enhanced_img
+        else:
+            return df
 
     def evaluate_result(
             self,
@@ -127,3 +138,80 @@ class UFish():
         metrics = compute_metrics(
             pred, true, mdist=mdist)
         return metrics
+
+    def plot_result(
+            self,
+            img: np.ndarray,
+            pred: pd.DataFrame,
+            fig_size: T.Tuple[int, int] = (10, 10),
+            image_cmap: str = 'gray',
+            marker_size: int = 20,
+            marker_color: str = 'red',
+            marker_style: str = 'x',
+            ) -> "Figure":
+        """Plot the prediction result.
+
+        Args:
+            img: The image to plot.
+            pred: The predicted spots.
+            fig_size: The figure size.
+            image_cmap: The colormap for the image.
+            marker_size: The marker size.
+            marker_color: The marker color.
+            marker_style: The marker style.
+        """
+        return plot_result(
+            img, pred.values,
+            fig_size=fig_size,
+            image_cmap=image_cmap,
+            marker_size=marker_size,
+            marker_color=marker_color,
+            marker_style=marker_style,
+        )
+
+    def plot_evaluate(
+            self,
+            img: np.ndarray,
+            pred: pd.DataFrame,
+            true: pd.DataFrame,
+            cutoff: float = 3.0,
+            fig_size: T.Tuple[int, int] = (10, 10),
+            image_cmap: str = 'gray',
+            marker_size: int = 20,
+            tp_color: str = 'white',
+            fp_color: str = 'red',
+            fn_color: str = 'yellow',
+            tp_marker: str = 'x',
+            fp_marker: str = 'x',
+            fn_marker: str = 'x',
+            ) -> "Figure":
+        """Plot the prediction result.
+
+        Args:
+            img: The image to plot.
+            pred: The predicted spots.
+            true: The true spots.
+            cutoff: The maximum distance to consider a spot as a true positive.
+            fig_size: The figure size.
+            image_cmap: The colormap for the image.
+            marker_size: The marker size.
+            tp_color: The color for true positive.
+            fp_color: The color for false positive.
+            fn_color: The color for false negative.
+            tp_marker_style: The marker style for true positive.
+            fp_marker_style: The marker style for false positive.
+            fn_marker_style: The marker style for false negative.
+        """
+        return plot_evaluate(
+            img, pred.values, true.values,
+            cutoff=cutoff,
+            fig_size=fig_size,
+            image_cmap=image_cmap,
+            marker_size=marker_size,
+            tp_color=tp_color,
+            fp_color=fp_color,
+            fn_color=fn_color,
+            tp_marker=tp_marker,
+            fp_marker=fp_marker,
+            fn_marker=fn_marker,
+        )
