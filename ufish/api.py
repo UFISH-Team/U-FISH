@@ -118,6 +118,7 @@ class UFish():
             enhanced_img: The enhanced image. if return_enhanced_img is True.
         """
         assert img.ndim == 2, 'Image must be 2D.'
+        img = img.astype(np.float32)
         from .calling import call_spots
         enhanced_img = self.enhance_img(img)
         df = call_spots(enhanced_img, cc_size_thresh)

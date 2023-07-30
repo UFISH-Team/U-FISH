@@ -60,10 +60,10 @@ class UFishCLI():
         pred_df, enhanced = self._ufish.pred_2d(
             img, cc_size_thresh, return_enhanced_img=True)
         pred_df.to_csv(output_csv_path, index=False)
-        logger.info(f'Saved predicted spots to {output_csv_path}.')
+        logger.info(f'Saved predicted spots to {output_csv_path}')
         if enhanced_output_path is not None:
             imsave(enhanced_output_path, enhanced)
-            logger.info(f'Saved enhanced image to {enhanced_output_path}.')
+            logger.info(f'Saved enhanced image to {enhanced_output_path}')
 
     def pred_2d_imgs(
             self,
@@ -85,8 +85,8 @@ class UFishCLI():
         in_dir_path = Path(input_dir)
         out_dir_path = Path(output_dir)
         out_dir_path.mkdir(parents=True, exist_ok=True)
-        logger.info(f'Predicting images in {in_dir_path}.')
-        logger.info(f'Saving results to {out_dir_path}.')
+        logger.info(f'Predicting images in {in_dir_path}')
+        logger.info(f'Saving results to {out_dir_path}')
         for input_path in in_dir_path.iterdir():
             input_prefix = splitext(input_path.name)[0]
             output_path = out_dir_path / (input_prefix + '.pred.csv')
