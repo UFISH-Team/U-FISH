@@ -7,9 +7,9 @@ The underlying concept of our method, U-FISH, acknowledges the significant varia
 ## TODO List
 
 - [x] API
-- [ ] CLI
-- [ ] Utils
-    + [ ] Plotting tool for show TP, FP, FN
+- [x] CLI
+- [x] Utils
+    + [x] Plotting tool for show TP, FP, FN
 - [ ] Napari plugin
 - [ ] Add more datasets
     + [ ] MER-FISH
@@ -43,11 +43,57 @@ ufish.load_weights("path/to/weights")  # loading model weights
 
 # inference
 img = io.imread("path/to/image")
-spots = ufish.predict(img)
+pred_spots = ufish.predict(img)
+
+# plot prediction result
+fig_spots = ufish.plot_result(img, pred_spots)
 
 # evaluate
 true_spots = pd.read_csv("path/to/true_spots.csv")
 metrics = ufish.evaluate_result(spots, true_spots)
+
+# plot evaluation result
+fig_eval = ufish.plot_evaluation_result(
+    img, pred_spots, true_spots, cutoff=3.0)
+```
+
+CLI usage:
+
+```bash
+# list all sub-commands:
+$ python -m ufish.cli
+NAME
+    cli.py
+
+SYNOPSIS
+    cli.py COMMAND
+
+COMMANDS
+    COMMAND is one of the following:
+
+     load_weights
+       Load weights from a local file or the internet.
+
+     plot_2d_eval
+       Plot the evaluation result.
+
+     plot_2d_pred
+       Plot the predicted spots on the image.
+
+     pred_2d_img
+       Predict spots in a 2d image.
+
+     pred_2d_imgs
+       Predict spots in a directory of 2d images.
+
+# predict one image
+$ python -m ufish.cli pred_2d_img input.tiff output.csv
+
+# predict all images in a directory
+$ python -m ufish.cli pred_2d_imgs input_dir output_dir
+
+# using --help to see details of each sub-command, e.g.:
+$ python -m ufish.cli pred_2d_img --help
 ```
 
 ## Dataset

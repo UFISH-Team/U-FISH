@@ -8,7 +8,6 @@ from skimage.io import imread, imsave
 from matplotlib import pyplot as plt
 
 from .utils.log import logger
-from .utils.plot import plot_result, plot_evaluate
 
 
 class UFishCLI():
@@ -18,9 +17,12 @@ class UFishCLI():
             local_store_path: str = '~/.ufish/',
             weights_file_name: str = 'v1-for_benchmark.pth',
             ):
-        self._cuda = cuda
-        self._local_store_path = local_store_path
-        self._weights_file_name = weights_file_name
+        from .api import UFish
+        self._ufish = UFish(
+            cuda=cuda,
+            default_weight_file=weights_file_name,
+            local_store_path=local_store_path,
+        )
         self._weights_loaded = False
 
     def load_weights(
@@ -30,16 +32,10 @@ class UFishCLI():
 
         Args:
             weights_path: The path to the weights file."""
-        from .api import UFish
-        self.ufish = UFish(
-            cuda=self._cuda,
-            default_weight_file=self._weights_file_name,
-            local_store_path=self._local_store_path,
-        )
         if weights_path is not None:
-            self.ufish.load_weights(weights_path)
+            self._ufish.load_weights(weights_path)
         else:
-            self.ufish.load_weights_from_internet()
+            self._ufish.load_weights_from_internet()
         self._weights_loaded = True
 
     def pred_2d_img(
@@ -61,7 +57,7 @@ class UFishCLI():
             self.load_weights()
         logger.info(f'Predicting {input_img_path}.')
         img = imread(input_img_path)
-        pred_df, enhanced = self.ufish.pred_2d(
+        pred_df, enhanced = self._ufish.pred_2d(
             img, cc_size_thresh, return_enhanced_img=True)
         pred_df.to_csv(output_csv_path, index=False)
         logger.info(f'Saved predicted spots to {output_csv_path}.')
@@ -112,7 +108,9 @@ class UFishCLI():
         """Plot the predicted spots on the image."""
         img = imread(image_path)
         pred_df = pd.read_csv(pred_csv_path)
-        fig = plot_result(img, pred_df, **kwargs)
+        fig = self._ufish.plot_result(
+            img, pred_df, **kwargs
+        )
         if fig_save_path is not None:
             fig.savefig(fig_save_path)
             logger.info(f'Saved figure to {fig_save_path}.')
@@ -124,6 +122,7 @@ class UFishCLI():
             image_path: str,
             pred_csv_path: str,
             true_csv_path: str,
+            cutoff: float = 3.0,
             fig_save_path: T.Optional[str] = None,
             **kwargs
             ):
@@ -131,7 +130,8 @@ class UFishCLI():
         img = imread(image_path)
         pred_df = pd.read_csv(pred_csv_path)
         gt_df = pd.read_csv(true_csv_path)
-        fig = plot_evaluate(img, pred_df, gt_df, **kwargs)
+        fig = self._ufish.plot_evaluate(
+            img, pred_df, gt_df, cutoff=cutoff, **kwargs)
         if fig_save_path is not None:
             fig.savefig(fig_save_path)
             logger.info(f'Saved figure to {fig_save_path}.')

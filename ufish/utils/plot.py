@@ -1,7 +1,6 @@
 import typing as T
 
 import numpy as np
-import pandas as pd
 import scipy.spatial.distance
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
@@ -13,7 +12,7 @@ from .metrics import f1_at_cutoff
 class Plot2d(object):
     def __init__(self):
         self.default_figsize = (10, 10)
-        self.default_marker_size = 10
+        self.default_marker_size = 20
         self.default_marker_color = "red"
         self.default_marker_style = "x"
         self.default_imshow_cmap = "gray"
@@ -60,7 +59,7 @@ class Plot2d(object):
         kwargs.setdefault("marker", self.default_marker_style)
         ax.scatter(coords[:, 1], coords[:, 0], **kwargs)
 
-    def compare_result(
+    def evaluate_result(
             self,
             pred: np.ndarray,
             true: np.ndarray,
@@ -73,6 +72,7 @@ class Plot2d(object):
             fp_marker: T.Optional[str] = None,
             fn_marker: T.Optional[str] = None,
             title_f1: bool = True,
+            legend: bool = True,
             **kwargs
             ):
         """ Plot true positives, false positives, and false negatives.
@@ -89,6 +89,7 @@ class Plot2d(object):
             fp_marker: marker style for false positives
             fn_marker: marker style for false negatives
             title_f1: whether to show f1 score in title
+            legend: whether to show legend
             **kwargs: keyword arguments passed to ax.scatter
         """
         if ax is None:
@@ -112,70 +113,39 @@ class Plot2d(object):
         kwargs_tp = kwargs.copy()
         kwargs_tp.setdefault("c", tp_color)
         kwargs_tp.setdefault("marker", tp_marker)
-        ax.scatter(tp_coords[:, 1], tp_coords[:, 0], **kwargs_tp)
+        ax.scatter(
+            tp_coords[:, 1], tp_coords[:, 0],
+            label="true positive",
+            **kwargs_tp)
         kwargs_fp = kwargs.copy()
         kwargs_fp.setdefault("c", fp_color)
         kwargs_fp.setdefault("marker", fp_marker)
-        ax.scatter(fp_coords[:, 1], fp_coords[:, 0], **kwargs_fp)
+        ax.scatter(
+            fp_coords[:, 1], fp_coords[:, 0],
+            label="false positive",
+            **kwargs_fp)
         kwargs_fn = kwargs.copy()
         kwargs_fn.setdefault("c", fn_color)
         kwargs_fn.setdefault("marker", fn_marker)
-        ax.scatter(fn_coords[:, 1], fn_coords[:, 0], **kwargs_fn)
+        ax.scatter(
+            fn_coords[:, 1], fn_coords[:, 0],
+            label="false negative",
+            **kwargs_fn)
         # title
         if title_f1:
-            ax.set_title(f"f1={f1_val:.3f} at {cutoff:.1f}")
+            ax.set_title(f"f1={f1_val:.3f} at cutoff {cutoff:.1f}")
+        if legend:
+            plt.legend()
 
-
-def plot_result(
-        img: np.ndarray,
-        pred: pd.DataFrame,
-        fig_size: T.Tuple[int, int] = (10, 10),
-        image_cmap: str = 'gray',
-        marker_size: int = 20,
-        marker_color: str = 'red',
-        marker_style: str = 'x',
-        ) -> "Figure":
-    plt2d = Plot2d()
-    plt2d.default_figsize = fig_size
-    plt2d.default_marker_size = marker_size
-    plt2d.default_marker_color = marker_color
-    plt2d.default_marker_style = marker_style
-    plt2d.default_imshow_cmap = image_cmap
-    plt2d.new_fig()
-    plt2d.image(img)
-    plt2d.spots(pred.values)
-    return plt2d.fig
-
-
-def plot_evaluate(
-        img: np.ndarray,
-        pred: pd.DataFrame,
-        true: pd.DataFrame,
-        cutoff: float = 3.0,
-        fig_size: T.Tuple[int, int] = (10, 10),
-        image_cmap: str = 'gray',
-        marker_size: int = 20,
-        tp_color: str = 'green',
-        fp_color: str = 'red',
-        fn_color: str = 'yellow',
-        tp_marker: str = 'x',
-        fp_marker: str = 'x',
-        fn_marker: str = 'x',
-        ) -> "Figure":
-    plt2d = Plot2d()
-    plt2d.default_figsize = fig_size
-    plt2d.default_marker_size = marker_size
-    plt2d.default_imshow_cmap = image_cmap
-    plt2d.new_fig()
-    plt2d.image(img)
-    plt2d.compare_result(
-        pred.values, true.values,
-        cutoff=cutoff,
-        tp_color=tp_color,
-        fp_color=fp_color,
-        fn_color=fn_color,
-        tp_marker=tp_marker,
-        fp_marker=fp_marker,
-        fn_marker=fn_marker,
-    )
-    return plt2d.fig
+    @classmethod
+    def enhance_compare(
+            cls,
+            raw_img: np.ndarray,
+            enhanced_img: np.ndarray,
+            fig_size: T.Tuple[int, int] = (20, 10),
+            ) -> "Figure":
+        plt2d = cls()
+        fig, axes = plt.subplots(1, 2, figsize=fig_size)
+        plt2d.image(raw_img, ax=axes[0])
+        plt2d.image(enhanced_img, ax=axes[1])
+        return fig

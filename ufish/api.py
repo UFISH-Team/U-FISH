@@ -4,15 +4,11 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import torch
 
-from .unet.model import UNet
-from .calling import call_spots
-from .utils.metrics import compute_metrics
-from .utils.plot import plot_result, plot_evaluate
 from .utils.log import logger
 
 if T.TYPE_CHECKING:
+    from .unet.model import UNet
     from matplotlib.figure import Figure
 
 
@@ -31,9 +27,19 @@ class UFish():
             default_weight_file: The default weight file to use.
             local_store_path: The local path to store the weights.
         """
+        self._cuda = cuda
+        self.model: T.Optional["UNet"] = None
+        self.default_weight_file = default_weight_file
+        self.store_base_url = BASE_STORE_URL
+        self.local_store_path = Path(
+            os.path.expanduser(local_store_path))
+
+    def _init_model(self) -> None:
+        import torch
+        from .unet.model import UNet
         self.model = UNet()
         self.cuda = False
-        if cuda:
+        if self._cuda:
             if torch.cuda.is_available():
                 self.model = self.model.cuda()
                 self.cuda = True
@@ -42,16 +48,15 @@ class UFish():
                 logger.warning('CUDA is not available, using CPU.')
         else:
             logger.info('CUDA is not used, using CPU.')
-        self.store_base_url = BASE_STORE_URL
-        self.default_weight_file = default_weight_file
-        self.local_store_path = Path(
-            os.path.expanduser(local_store_path))
 
     def load_weights(self, weights_path: T.Union[Path, str]) -> None:
         """Load weights from a local file.
 
         Args:
             weights_path: The path to the weights file."""
+        import torch
+        self._init_model()
+        assert self.model is not None
         weights_path = str(weights_path)
         logger.info(f'Loading weights from {weights_path}.')
         device = torch.device('cuda' if self.cuda else 'cpu')
@@ -65,6 +70,7 @@ class UFish():
         Args:
             weight_file: The weight file name to load.
         """
+        import torch
         weight_file = weight_file or self.default_weight_file
         weight_url = self.store_base_url + weight_file
         local_weight_path = self.local_store_path / weight_file
@@ -83,6 +89,9 @@ class UFish():
 
     def enhance_img(self, img: np.ndarray) -> np.ndarray:
         """Enhance the image using the U-Net model."""
+        if self.model is None:
+            raise RuntimeError('Model is not initialized.')
+        import torch
         assert img.ndim == 2, 'Image must be 2D.'
         tensor = torch.from_numpy(img).float().unsqueeze(0).unsqueeze(0)
         if self.cuda:
@@ -109,6 +118,7 @@ class UFish():
             enhanced_img: The enhanced image. if return_enhanced_img is True.
         """
         assert img.ndim == 2, 'Image must be 2D.'
+        from .calling import call_spots
         enhanced_img = self.enhance_img(img)
         df = call_spots(enhanced_img, cc_size_thresh)
         if return_enhanced_img:
@@ -131,6 +141,7 @@ class UFish():
 
         Returns:
             A pandas dataframe containing the evaluation metrics."""
+        from .utils.metrics import compute_metrics
         axis_names = list(pred.columns)
         axis_cols = [n for n in axis_names if n.startswith('axis')]
         pred = pred[axis_cols].values
@@ -160,14 +171,17 @@ class UFish():
             marker_color: The marker color.
             marker_style: The marker style.
         """
-        return plot_result(
-            img, pred.values,
-            fig_size=fig_size,
-            image_cmap=image_cmap,
-            marker_size=marker_size,
-            marker_color=marker_color,
-            marker_style=marker_style,
-        )
+        from .utils.plot import Plot2d
+        plt2d = Plot2d()
+        plt2d.default_figsize = fig_size
+        plt2d.default_marker_size = marker_size
+        plt2d.default_marker_color = marker_color
+        plt2d.default_marker_style = marker_style
+        plt2d.default_imshow_cmap = image_cmap
+        plt2d.new_fig()
+        plt2d.image(img)
+        plt2d.spots(pred.values)
+        return plt2d.fig
 
     def plot_evaluate(
             self,
@@ -178,7 +192,7 @@ class UFish():
             fig_size: T.Tuple[int, int] = (10, 10),
             image_cmap: str = 'gray',
             marker_size: int = 20,
-            tp_color: str = 'white',
+            tp_color: str = 'green',
             fp_color: str = 'red',
             fn_color: str = 'yellow',
             tp_marker: str = 'x',
@@ -202,12 +216,16 @@ class UFish():
             fp_marker_style: The marker style for false positive.
             fn_marker_style: The marker style for false negative.
         """
-        return plot_evaluate(
-            img, pred.values, true.values,
+        from .utils.plot import Plot2d
+        plt2d = Plot2d()
+        plt2d.default_figsize = fig_size
+        plt2d.default_marker_size = marker_size
+        plt2d.default_imshow_cmap = image_cmap
+        plt2d.new_fig()
+        plt2d.image(img)
+        plt2d.evaluate_result(
+            pred.values, true.values,
             cutoff=cutoff,
-            fig_size=fig_size,
-            image_cmap=image_cmap,
-            marker_size=marker_size,
             tp_color=tp_color,
             fp_color=fp_color,
             fn_color=fn_color,
@@ -215,3 +233,4 @@ class UFish():
             fp_marker=fp_marker,
             fn_marker=fn_marker,
         )
+        return plt2d.fig
