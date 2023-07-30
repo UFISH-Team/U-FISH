@@ -156,6 +156,10 @@ class UNet(nn.Module):
         for i, decoder in enumerate(self.decoders):
             x = self.upsamples[i](x)
             x = self.cbams[i](x)
+            diffY = encodings[-i - 1].size()[2] - x.size()[2]
+            diffX = encodings[-i - 1].size()[3] - x.size()[3]
+            x = F.pad(x, (diffX // 2, diffX - diffX // 2,
+                          diffY // 2, diffY - diffY // 2))
             x = torch.cat([x, encodings[-i - 1]], dim=1)
             x = decoder(x)
 
