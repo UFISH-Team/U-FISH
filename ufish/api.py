@@ -87,18 +87,40 @@ class UFish():
             torch.hub.download_url_to_file(weight_url, local_weight_path)
         self.load_weights(local_weight_path)
 
-    def enhance_img(self, img: np.ndarray) -> np.ndarray:
+    def enhance_img(self, img: np.ndarray, batch_size: int = 4) -> np.ndarray:
         """Enhance the image using the U-Net model."""
         if self.model is None:
             raise RuntimeError('Model is not initialized.')
+        if img.ndim == 2:
+            output = self._enhance_img2d(img)
+        elif img.ndim == 3:
+            output = self._enhance_img3d(img, batch_size=batch_size)
+        else:
+            raise ValueError('Image must be 2D or 3D.')
+        return output
+
+    def _enhance_img2d(self, img: np.ndarray) -> np.ndarray:
+        """Enhance a 2D image."""
         import torch
-        assert img.ndim == 2, 'Image must be 2D.'
         tensor = torch.from_numpy(img).float().unsqueeze(0).unsqueeze(0)
         if self.cuda:
             tensor = tensor.cuda()
         with torch.no_grad():
             output = self.model(tensor)
         output = output.squeeze(0).squeeze(0).cpu().numpy()
+        return output
+
+    def _enhance_img3d(
+            self, img: np.ndarray, batch_size: int = 4) -> np.ndarray:
+        """Enhance a 3D image."""
+        import torch
+        tensor = torch.from_numpy(img).float().unsqueeze(1)
+        if self.cuda:
+            tensor = tensor.cuda()
+        with torch.no_grad():
+            for i in range(0, tensor.shape[0], batch_size):
+                tensor[i:i+batch_size] = self.model(tensor[i:i+batch_size])
+        output = tensor.squeeze(1).cpu().numpy()
         return output
 
     def pred_2d(

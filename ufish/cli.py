@@ -38,6 +38,20 @@ class UFishCLI():
             self._ufish.load_weights_from_internet()
         self._weights_loaded = True
 
+    def enhance_img(
+            self,
+            input_img_path: str,
+            output_img_path: str,
+            ):
+        """Enhance an image."""
+        if not self._weights_loaded:
+            self.load_weights()
+        logger.info(f'Enhancing {input_img_path}')
+        img = imread(input_img_path)
+        enhanced = self._ufish.enhance_img(img)
+        imsave(output_img_path, enhanced)
+        logger.info(f'Saved enhanced image to {output_img_path}')
+
     def pred_2d_img(
             self,
             input_img_path: str,
