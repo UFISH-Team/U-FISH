@@ -91,9 +91,8 @@ class UFish():
         """Enhance the image using the U-Net model."""
         if self.model is None:
             raise RuntimeError('Model is not initialized.')
-        from skimage.exposure import rescale_intensity
-        img = img.astype(np.float32)
-        img = rescale_intensity(img, out_range=(0, 255))
+        from .utils.misc import scale_image
+        img = scale_image(img)
         if img.ndim == 2:
             output = self._enhance_img2d(img)
         elif img.ndim == 3:

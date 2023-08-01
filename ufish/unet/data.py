@@ -5,10 +5,12 @@ import pandas as pd
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from skimage import io
 from scipy.ndimage import rotate
+from skimage.io import imread
 from skimage.morphology import dilation
 import skimage.morphology as morphology  # noqa: F401
+
+from ..utils.misc import scale_image
 
 
 class FISHSpotsDataset(Dataset):
@@ -29,7 +31,8 @@ class FISHSpotsDataset(Dataset):
             idx = idx.tolist()
 
         img_path = os.path.join(self.root_dir, self.meta_data.iloc[idx, 0])
-        image = io.imread(img_path)
+        image = imread(img_path)
+        image = scale_image(image)
         image = np.expand_dims(image, axis=0)
 
         coord_path = os.path.join(self.root_dir, self.meta_data.iloc[idx, 1])
@@ -46,7 +49,7 @@ class FISHSpotsDataset(Dataset):
     def coords_to_mask(self, coords: pd.DataFrame, shape: T.Tuple[int, int]):
         mask = np.zeros(shape, dtype=np.uint8)
         for _, row in coords.iterrows():
-            y, x = int(row['axis-0']), int(row['axis-1'])
+            y, x = int(row['axis-0'] + 0.5), int(row['axis-1'] + 0.5)
             if 0 <= y < shape[0] and 0 <= x < shape[1]:
                 mask[y, x] = 1
         mask = dilation(mask, self.spot_footprint)
