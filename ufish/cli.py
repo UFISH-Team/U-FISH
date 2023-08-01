@@ -52,12 +52,38 @@ class UFishCLI():
         imsave(output_img_path, enhanced)
         logger.info(f'Saved enhanced image to {output_img_path}')
 
+    def call_spots_cc_center(
+            self,
+            enhanced_img_path: str,
+            output_csv_path: str,
+            binary_threshold: T.Union[str, float] = 'otsu',
+            cc_size_thresh: int = 20
+            ):
+        """Call spots by finding connected components
+        and taking the centroids.
+
+        Args:
+            enhanced_img_path: Path to the enhanced image.
+            output_csv_path: Path to the output csv file.
+            binary_threshold: The threshold for binarizing the image.
+            cc_size_thresh: Connected component size threshold.
+        """
+        img = imread(enhanced_img_path)
+        logger.info(f'Calling spots in {enhanced_img_path}')
+        pred_df = self._ufish.call_spots_cc_center(
+            img,
+            binary_threshold=binary_threshold,
+            cc_size_thresh=cc_size_thresh)
+        pred_df.to_csv(output_csv_path, index=False)
+        logger.info(f'Saved predicted spots to {output_csv_path}')
+
     def pred_2d_img(
             self,
             input_img_path: str,
             output_csv_path: str,
             enhanced_output_path: T.Optional[str] = None,
-            cc_size_thresh: int = 18
+            binary_threshold: T.Union[str, float] = 'otsu',
+            cc_size_thresh: int = 20
             ):
         """Predict spots in a 2d image.
 
@@ -65,6 +91,7 @@ class UFishCLI():
             input_img_path: Path to the input image.
             output_csv_path: Path to the output csv file.
             enhanced_output_path: Path to the enhanced image.
+            binary_threshold: The threshold for binarizing the image.
             cc_size_thresh: Connected component size threshold.
         """
         if not self._weights_loaded:
@@ -72,7 +99,9 @@ class UFishCLI():
         logger.info(f'Predicting {input_img_path}.')
         img = imread(input_img_path)
         pred_df, enhanced = self._ufish.pred_2d(
-            img, cc_size_thresh, return_enhanced_img=True)
+            img, binary_threshold=binary_threshold,
+            cc_size_thresh=cc_size_thresh,
+            return_enhanced_img=True)
         pred_df.to_csv(output_csv_path, index=False)
         logger.info(f'Saved predicted spots to {output_csv_path}')
         if enhanced_output_path is not None:

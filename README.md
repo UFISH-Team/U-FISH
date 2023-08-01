@@ -7,9 +7,16 @@ The underlying concept of our method, U-FISH, acknowledges the significant varia
 ## TODO List
 
 - [x] API
+  + [x] Inference
+  + [x] Evaluation
+  + [x] Plotting tool for show TP, FP, FN
+  + [ ] Training
 - [x] CLI
-- [x] Utils
-    + [x] Plotting tool for show TP, FP, FN
+  + [x] Inference
+  + [ ] Evaluation
+  + [x] Plotting tool for show TP, FP, FN
+  + [ ] Training
+- [ ] setup.py and upload to PyPI
 - [ ] Napari plugin
 - [ ] Add more datasets
     + [ ] MER-FISH

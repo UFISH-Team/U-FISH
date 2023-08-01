@@ -91,6 +91,9 @@ class UFish():
         """Enhance the image using the U-Net model."""
         if self.model is None:
             raise RuntimeError('Model is not initialized.')
+        from skimage.exposure import rescale_intensity
+        img = img.astype(np.float32)
+        img = rescale_intensity(img, out_range=(0, 255))
         if img.ndim == 2:
             output = self._enhance_img2d(img)
         elif img.ndim == 3:
@@ -123,15 +126,41 @@ class UFish():
         output = tensor.squeeze(1).cpu().numpy()
         return output
 
+    def call_spots_cc_center(
+            self, enhanced_img: np.ndarray,
+            binary_threshold: T.Union[str, float] = 'otsu',
+            cc_size_thresh: int = 20,
+            ) -> pd.DataFrame:
+        """Call spots by finding the connected components' centroids.
+
+        Args:
+            enhanced_img: The enhanced image.
+            binary_threshold: The threshold for binarizing the image.
+            cc_size_thresh: Connected component size threshold.
+
+        Returns:
+            A pandas dataframe containing the spots.
+        """
+        assert enhanced_img.ndim in (2, 3), 'Image must be 2D or 3D.'
+        from .calling import call_spots_cc_center
+        df = call_spots_cc_center(
+            enhanced_img,
+            cc_size_threshold=cc_size_thresh,
+            binary_threshold=binary_threshold,
+        )
+        return df
+
     def pred_2d(
             self, img: np.ndarray,
-            cc_size_thresh: int = 18,
+            binary_threshold: T.Union[str, float] = 'otsu',
+            cc_size_thresh: int = 20,
             return_enhanced_img: bool = False,
             ) -> T.Union[pd.DataFrame, T.Tuple[pd.DataFrame, np.ndarray]]:
         """Predict the spots in a 2D image.
 
         Args:
             img: The 2D image to predict.
+            binary_threshold: The threshold for binarizing the image.
             cc_size_thresh: Connected component size threshold.
             return_enhanced_img: Whether to return the enhanced image.
 
@@ -140,10 +169,11 @@ class UFish():
             enhanced_img: The enhanced image. if return_enhanced_img is True.
         """
         assert img.ndim == 2, 'Image must be 2D.'
-        img = img.astype(np.float32)
-        from .calling import call_spots
         enhanced_img = self.enhance_img(img)
-        df = call_spots(enhanced_img, cc_size_thresh)
+        df = self.call_spots_cc_center(
+            enhanced_img,
+            binary_threshold=binary_threshold,
+            cc_size_thresh=cc_size_thresh)
         if return_enhanced_img:
             return df, enhanced_img
         else:

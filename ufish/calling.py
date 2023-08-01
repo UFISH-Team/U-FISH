@@ -1,23 +1,34 @@
 """
 Spots calling from the enhanced images.
 """
+import typing as T
+
 import numpy as np
 import pandas as pd
 from skimage.filters import threshold_otsu
 from skimage.measure import label, regionprops
 from scipy import ndimage as ndi
 from skimage.feature import peak_local_max
+from skimage.morphology import local_maxima
 from skimage.segmentation import watershed
 
 
-def call_dense_region(binary_image: np.ndarray) -> list:
+def watershed_center(binary_image: np.ndarray) -> list:
+    """Segment the dense regions using watershed algorithm.
+    and return the centroids of the regions."""
     distance = ndi.distance_transform_edt(binary_image)
-    coords = peak_local_max(
-        distance,
-        footprint=np.ones((4, 4)),
-        labels=binary_image)
-    mask = np.zeros(distance.shape, dtype=bool)
-    mask[tuple(coords.T)] = True
+    ndim = binary_image.ndim
+    if ndim == 2:
+        coords = peak_local_max(
+            distance,
+            footprint=np.ones((4, 4)),
+            labels=binary_image)
+        mask = np.zeros(distance.shape, dtype=bool)
+        mask[tuple(coords.T)] = True
+    elif ndim == 3:
+        mask = local_maxima(distance)
+    else:
+        raise ValueError('Only 2D and 3D images are supported.')
     markers, _ = ndi.label(mask)
     labels = watershed(-distance, markers, mask=binary_image)
     regions = regionprops(label(labels))
@@ -25,13 +36,27 @@ def call_dense_region(binary_image: np.ndarray) -> list:
     return centroids
 
 
-def call_spots(
+def call_spots_cc_center(
         image: np.ndarray,
-        cc_size_threshold: int = 18,
+        binary_threshold: T.Union[str, float] = 'otsu',
+        cc_size_threshold: int = 20,
         output_dense_mark: bool = False,
         ) -> pd.DataFrame:
+    """Call spots from the connected components' centroids.
+
+    Args:
+        image: The input image.
+        binary_threshold: The threshold for binarizing the image.
+        cc_size_threshold: The threshold for connected components' size.
+        output_dense_mark: Whether to output a column indicating whether
+            the spot is from a dense region.
+    """
     ndim = image.ndim
-    binary_image = image > threshold_otsu(image)
+    if binary_threshold == 'otsu':
+        thresh = threshold_otsu(image)
+    else:
+        thresh = binary_threshold
+    binary_image = image > thresh
     regions = regionprops(label(binary_image))
     centroids_sparse = []
     dense_regions = np.zeros_like(binary_image, dtype=np.uint8)
@@ -46,7 +71,7 @@ def call_spots(
                 raise ValueError('Only 2D and 3D images are supported.')
         else:
             centroids_sparse.append(region.centroid)
-    centroids_dense = call_dense_region(dense_regions)
+    centroids_dense = watershed_center(dense_regions)
     all_centroids = centroids_sparse + centroids_dense
     all_centroids = np.array(all_centroids)  # type: ignore
     columns = [f'axis-{i}' for i in range(ndim)]
