@@ -112,7 +112,7 @@ class FISHSpotsDataset(Dataset):
             self, coords: np.ndarray,
             shape: T.Tuple[int, int],
             ) -> np.ndarray:
-        mask = np.zeros(shape, dtype=np.uint8)
+        mask = np.zeros(shape, dtype=np.float32)
         # remove out-of-bound coordinates
         c = coords
         c = (c + 0.5).astype(np.uint32)

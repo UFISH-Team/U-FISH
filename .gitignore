@@ -135,3 +135,4 @@ FISH_spots
 *.pth
 
 tmp/
+runs/

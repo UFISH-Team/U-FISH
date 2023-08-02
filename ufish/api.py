@@ -292,6 +292,7 @@ class UFish():
             dataset_root_path: str,
             meta_train_path: str,
             meta_valid_path: str,
+            target_process: str = 'gaussian',
             data_argu: bool = False,
             pretrained_model_path: T.Optional[str] = None,
             num_epochs: int = 50,
@@ -306,6 +307,8 @@ class UFish():
             dataset_root_path: The root path of the dataset.
             meta_train_path: The path to the training metadata csv file.
             meta_valid_path: The path to the validation metadata csv file.
+            target_process: The target image processing method.
+                'gaussian' or 'dialation'. default 'gaussian'.
             data_argu: Whether to use data augmentation.
             pretrained_model_path: The path to the pretrained model.
             num_epochs: The number of epochs to train.
@@ -317,20 +320,43 @@ class UFish():
         from .unet.train import train_on_dataset
         from .unet.data import FISHSpotsDataset
         if data_argu:
+            logger.info('Using data augmentation.')
             from .unet.data import composed_transform
             transform = composed_transform
         else:
             transform = None
 
+        logger.info(f'Using {target_process} as target process.')
+        if target_process == 'gaussian':
+            process_func = FISHSpotsDataset.gaussian_filter
+        else:
+            process_func = FISHSpotsDataset.dialate_mask
+
+        logger.info(
+            f"Loading training dataset from {meta_train_path} "
+            f"validation dataset from {meta_valid_path} "
+            f"Dataset root path: {dataset_root_path}"
+        )
         train_dataset = FISHSpotsDataset.from_meta_csv(
             root_dir=dataset_root_path,
-            meta_csv=meta_train_path,
+            meta_csv_path=meta_train_path,
+            process_func=process_func,
             transform=transform
         )
 
         valid_dataset = FISHSpotsDataset.from_meta_csv(
             root_dir=dataset_root_path,
-            meta_csv=meta_valid_path,
+            meta_csv_path=meta_valid_path,
+            process_func=process_func,
+        )
+        logger.info(
+            f"Training dataset size: {len(train_dataset)}, "
+            f"Validation dataset size: {len(valid_dataset)}"
+        )
+        logger.info(
+            f"Number of epochs: {num_epochs}, "
+            f"Batch size: {batch_size}, "
+            f"Learning rate: {lr}"
         )
         train_on_dataset(
             train_dataset, valid_dataset,

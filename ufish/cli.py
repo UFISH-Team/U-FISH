@@ -181,6 +181,50 @@ class UFishCLI():
         else:
             plt.show()
 
+    def train(
+            self,
+            dataset_root_path: str,
+            meta_train_path: str,
+            meta_valid_path: str,
+            target_process: str = 'gaussian',
+            data_argu: bool = False,
+            pretrained_model_path: T.Optional[str] = None,
+            num_epochs: int = 50,
+            batch_size: int = 8,
+            lr: float = 1e-4,
+            summary_dir: str = "runs/unet",
+            model_save_path: str = "best_unet_model.pth"
+            ):
+        """Train the U-Net model.
+
+        Args:
+            dataset_root_path: The root path of the dataset.
+            meta_train_path: The path to the training metadata csv file.
+            meta_valid_path: The path to the validation metadata csv file.
+            target_process: The target image processing method.
+                'gaussian' or 'dialation'. default 'gaussian'.
+            data_argu: Whether to use data augmentation.
+            pretrained_model_path: The path to the pretrained model.
+            num_epochs: The number of epochs to train.
+            batch_size: The batch size.
+            lr: The learning rate.
+            summary_dir: The directory to save the TensorBoard summary to.
+            model_save_path: The path to save the best model to.
+        """
+        self._ufish.train(
+            dataset_root_path,
+            meta_train_path,
+            meta_valid_path,
+            target_process=target_process,
+            data_argu=data_argu,
+            pretrained_model_path=pretrained_model_path,
+            num_epochs=num_epochs,
+            batch_size=batch_size,
+            lr=lr,
+            summary_dir=summary_dir,
+            model_save_path=model_save_path
+        )
+
 
 if __name__ == '__main__':
     Fire(UFishCLI())

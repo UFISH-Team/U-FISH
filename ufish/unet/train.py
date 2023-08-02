@@ -9,6 +9,7 @@ from torch import Tensor
 from .model import UNet
 from .utils import DiceLoss, RMSELoss
 from .data import FISHSpotsDataset
+from ..utils.log import logger
 
 
 def training_loop(
@@ -40,16 +41,16 @@ def training_loop(
         epoch_loss = 0.0
         for idx, batch in enumerate(train_loader):
             images = batch["image"].to(device, dtype=torch.float)
-            masks = batch["mask"].to(device, dtype=torch.float)
+            targets = batch["target"].to(device, dtype=torch.float)
 
             optimizer.zero_grad()
             outputs = model(images)
-            loss = criterion(outputs, masks)
+            loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
 
             if idx % 10 == 0:
-                print(
+                logger.info(
                     f"Epoch: {epoch + 1}/{num_epochs}, "
                     f"Batch: {idx + 1}/{len(train_loader)}, "
                     f"Loss: {loss.item():.4f}"
@@ -63,11 +64,14 @@ def training_loop(
                 img = (img - img.min()) / (img.max() - img.min()) * 255
                 # record images
                 writer.add_image(
-                    "Image/input", images[0], epoch * len(train_loader) + idx)
+                    "Image/input",
+                    images[0], epoch * len(train_loader) + idx)
                 writer.add_image(
-                    "Image/mask", masks[0], epoch * len(train_loader) + idx)
+                    "Image/target",
+                    targets[0], epoch * len(train_loader) + idx)
                 writer.add_image(
-                    "Image/pred", outputs[0], epoch * len(train_loader) + idx)
+                    "Image/pred",
+                    outputs[0], epoch * len(train_loader) + idx)
 
             epoch_loss += loss.item()
 
@@ -79,16 +83,16 @@ def training_loop(
         with torch.no_grad():
             for batch in valid_loader:
                 images = batch["image"].to(device, dtype=torch.float)
-                masks = batch["mask"].to(device, dtype=torch.float)
+                targets = batch["mask"].to(device, dtype=torch.float)
 
                 outputs = model(images)
-                loss = criterion(outputs, masks)
+                loss = criterion(outputs, targets)
                 val_loss += loss.item()
 
         val_loss /= len(valid_loader)
         writer.add_scalar("Loss/val", val_loss, epoch)
 
-        print(
+        logger.info(
             f"Epoch {epoch + 1}/{num_epochs}, "
             f"Train Loss: {epoch_loss:.4f}, Val Loss: {val_loss:.4f}"
         )
@@ -96,7 +100,7 @@ def training_loop(
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             torch.save(model.state_dict(), model_save_path)
-            print(f"Best model saved with Val Loss: {val_loss:.4f}")
+            logger.info(f"Best model saved with Val Loss: {val_loss:.4f}")
 
     writer.close()
 
@@ -130,10 +134,10 @@ def train_on_dataset(
         valid_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+    logger.info(f"Using device: {device}")
     model = UNet(1, 1, 4)
     if pretrained_model_path is not None:
-        print(f"Loading pretrained model from {pretrained_model_path}")
+        logger.info(f"Loading pretrained model from {pretrained_model_path}")
         model.load_state_dict(torch.load(pretrained_model_path))
     model = model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)

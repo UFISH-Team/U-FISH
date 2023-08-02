@@ -10,13 +10,15 @@ The underlying concept of our method, U-FISH, acknowledges the significant varia
   + [x] Inference
   + [x] Evaluation
   + [x] Plotting tool for show TP, FP, FN
-  + [ ] Training
+  + [x] Training
 - [x] CLI
   + [x] Inference
   + [ ] Evaluation
   + [x] Plotting tool for show TP, FP, FN
-  + [ ] Training
-- [ ] setup.py and upload to PyPI
+  + [x] Training
+- [ ] deploy
+  + [ ] setup.py
+  + [ ] upload to PyPI
 - [ ] Napari plugin
 - [ ] Add more datasets
     + [ ] MER-FISH
