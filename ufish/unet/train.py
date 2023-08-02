@@ -83,7 +83,7 @@ def training_loop(
         with torch.no_grad():
             for batch in valid_loader:
                 images = batch["image"].to(device, dtype=torch.float)
-                targets = batch["mask"].to(device, dtype=torch.float)
+                targets = batch["target"].to(device, dtype=torch.float)
 
                 outputs = model(images)
                 loss = criterion(outputs, targets)
