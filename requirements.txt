@@ -9,3 +9,4 @@ scikit-learn
 fire
 loguru
 tensorboard
+imagecodecs

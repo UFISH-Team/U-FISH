@@ -112,7 +112,8 @@ class UFishCLI():
             input_dir: str,
             output_dir: str,
             save_enhanced_img: bool = True,
-            cc_size_thresh: int = 18
+            binary_threshold: T.Union[str, float] = 'otsu',
+            cc_size_thresh: int = 20
             ):
         """Predict spots in a directory of 2d images.
 
@@ -120,6 +121,7 @@ class UFishCLI():
             input_dir: Path to the input directory.
             output_dir: Path to the output directory.
             save_enhanced_img: Whether to save the enhanced image.
+            binary_threshold: The threshold for binarizing the image.
             cc_size_thresh: Connected component size threshold.
         """
         if not self._weights_loaded:
@@ -137,7 +139,8 @@ class UFishCLI():
                 str(input_path),
                 str(output_path),
                 str(enhanced_img_path) if save_enhanced_img else None,
-                cc_size_thresh
+                binary_threshold=binary_threshold,
+                cc_size_thresh=cc_size_thresh,
             )
 
     def plot_2d_pred(
