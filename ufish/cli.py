@@ -2,11 +2,6 @@ import typing as T
 from os.path import splitext
 from pathlib import Path
 
-from fire import Fire
-import pandas as pd
-from skimage.io import imread, imsave
-from matplotlib import pyplot as plt
-
 from .utils.log import logger
 
 
@@ -37,6 +32,7 @@ class UFishCLI():
         else:
             self._ufish.load_weights_from_internet()
         self._weights_loaded = True
+        return self
 
     def enhance_img(
             self,
@@ -44,6 +40,7 @@ class UFishCLI():
             output_img_path: str,
             ):
         """Enhance an image."""
+        from skimage.io import imread, imsave
         if not self._weights_loaded:
             self.load_weights()
         logger.info(f'Enhancing {input_img_path}')
@@ -68,6 +65,7 @@ class UFishCLI():
             binary_threshold: The threshold for binarizing the image.
             cc_size_thresh: Connected component size threshold.
         """
+        from skimage.io import imread
         img = imread(enhanced_img_path)
         logger.info(f'Calling spots in {enhanced_img_path}')
         pred_df = self._ufish.call_spots_cc_center(
@@ -94,6 +92,7 @@ class UFishCLI():
             binary_threshold: The threshold for binarizing the image.
             cc_size_thresh: Connected component size threshold.
         """
+        from skimage.io import imread, imsave
         if not self._weights_loaded:
             self.load_weights()
         logger.info(f'Predicting {input_img_path}.')
@@ -149,6 +148,9 @@ class UFishCLI():
             **kwargs
             ):
         """Plot the predicted spots on the image."""
+        import pandas as pd
+        from skimage.io import imread
+        import matplotlib.pyplot as plt
         img = imread(image_path)
         pred_df = pd.read_csv(pred_csv_path)
         fig = self._ufish.plot_result(
@@ -170,6 +172,9 @@ class UFishCLI():
             **kwargs
             ):
         """Plot the evaluation result."""
+        import pandas as pd
+        from skimage.io import imread
+        import matplotlib.pyplot as plt
         img = imread(image_path)
         pred_df = pd.read_csv(pred_csv_path)
         gt_df = pd.read_csv(true_csv_path)
@@ -224,7 +229,3 @@ class UFishCLI():
             summary_dir=summary_dir,
             model_save_path=model_save_path
         )
-
-
-if __name__ == '__main__':
-    Fire(UFishCLI())

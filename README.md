@@ -16,10 +16,11 @@ The underlying concept of our method, U-FISH, acknowledges the significant varia
   + [ ] Evaluation
   + [x] Plotting tool for show TP, FP, FN
   + [x] Training
-- [ ] deploy
-  + [ ] setup.py
-  + [ ] upload to PyPI
 - [ ] Napari plugin
+- [ ] deploy
+  + [x] setup.py
+  + [ ] upload to PyPI
+  + [ ] Upload to BioImageIO model zoo
 - [ ] Add more datasets
     + [ ] MER-FISH
     + [ ] seqFISH
@@ -30,7 +31,6 @@ The underlying concept of our method, U-FISH, acknowledges the significant varia
 - [ ] Benchmark
 - [ ] 3D integration method
 - [ ] Support for zarr format
-- [ ] Upload to BioImageIO model zoo
 - [ ] Documentation
 
 ## Usage
@@ -70,15 +70,21 @@ CLI usage:
 
 ```bash
 # list all sub-commands:
-$ python -m ufish.cli
+$ python -m ufish
 NAME
-    cli.py
+    ufish
 
 SYNOPSIS
-    cli.py COMMAND
+    ufish - COMMAND
 
 COMMANDS
     COMMAND is one of the following:
+
+     call_spots_cc_center
+       Call spots by finding connected components and taking the centroids.
+
+     enhance_img
+       Enhance an image.
 
      load_weights
        Load weights from a local file or the internet.
@@ -95,14 +101,17 @@ COMMANDS
      pred_2d_imgs
        Predict spots in a directory of 2d images.
 
+     train
+       Train the U-Net model.
+
 # predict one image
-$ python -m ufish.cli pred_2d_img input.tiff output.csv
+$ ufish pred_2d_img input.tiff output.csv
 
 # predict all images in a directory
-$ python -m ufish.cli pred_2d_imgs input_dir output_dir
+$ ufish pred_2d_imgs input_dir output_dir
 
 # using --help to see details of each sub-command, e.g.:
-$ python -m ufish.cli pred_2d_img --help
+$ ufish pred_2d_img --help
 ```
 
 ## Dataset
