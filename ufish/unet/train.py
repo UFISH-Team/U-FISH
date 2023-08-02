@@ -5,23 +5,18 @@ import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 from torch import Tensor
-from torchvision.transforms import Compose
-import fire
 
 from .model import UNet
 from .utils import DiceLoss, RMSELoss
-from .data import (
-    FISHSpotsDataset, RandomHorizontalFlip,
-    RandomRotation, ToTensorWrapper,
-)
+from .data import FISHSpotsDataset
 
 
-def train(
+def training_loop(
         model: torch.nn.Module, optimizer: torch.optim.Optimizer,
         criterion: T.Callable[[Tensor, Tensor], Tensor],
         writer: SummaryWriter,
         device: torch.device,
-        train_loader: DataLoader, test_loader: DataLoader,
+        train_loader: DataLoader, valid_loader: DataLoader,
         model_save_path: str,
         num_epochs=50):
     """
@@ -34,7 +29,7 @@ def train(
         writer: The TensorBoard writer.
         device: The device to use.
         train_loader: The training data loader.
-        test_loader: The test data loader.
+        valid_loader: The valid data loader.
         model_save_path: The path to save the model to.
         num_epochs: The number of epochs to train for.
     """
@@ -82,7 +77,7 @@ def train(
         model.eval()
         val_loss = 0.0
         with torch.no_grad():
-            for batch in test_loader:
+            for batch in valid_loader:
                 images = batch["image"].to(device, dtype=torch.float)
                 masks = batch["mask"].to(device, dtype=torch.float)
 
@@ -90,7 +85,7 @@ def train(
                 loss = criterion(outputs, masks)
                 val_loss += loss.item()
 
-        val_loss /= len(test_loader)
+        val_loss /= len(valid_loader)
         writer.add_scalar("Loss/val", val_loss, epoch)
 
         print(
@@ -106,48 +101,33 @@ def train(
     writer.close()
 
 
-def main(
-        meta_train_path: str, meta_test_path: str,
-        dataset_root_path: str,
+def train_on_dataset(
+        train_dataset: FISHSpotsDataset,
+        valid_dataset: FISHSpotsDataset,
         pretrained_model_path: T.Optional[str] = None,
-        num_epochs: int = 50, batch_size: int = 8,
-        data_argu: bool = False, lr: float = 1e-4,
+        num_epochs: int = 50,
+        batch_size: int = 8,
+        lr: float = 1e-4,
         summary_dir: str = "runs/unet",
         model_save_path: str = "best_unet_model.pth"
         ):
     """Train the UNet model.
 
     Args:
-        meta_train_path: The path to the training metadata CSV file.
-        meta_test_path: The path to the test metadata CSV file.
-        dataset_root_path: The path to the root directory of the dataset.
+        train_dataset: The training dataset.
+        valid_dataset: The validation dataset.
         pretrained_model_path: The path to the pretrained model.
         num_epochs: The number of epochs to train for.
         batch_size: The batch size.
-        data_argu: Whether to use data augmentation.
         lr: The learning rate.
         summary_dir: The directory to save the TensorBoard summary to.
         model_save_path: The path to save the best model to.
     """
-    if data_argu:
-        transform = Compose([
-            RandomHorizontalFlip(),
-            RandomRotation(),
-            ToTensorWrapper(),
-        ])
-    else:
-        transform = None
 
-    train_dataset = FISHSpotsDataset(
-        meta_csv=meta_train_path, root_dir=dataset_root_path,
-        transform=transform)
     train_loader = DataLoader(
         train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-
-    test_dataset = FISHSpotsDataset(
-        meta_csv=meta_test_path, root_dir=dataset_root_path)
-    test_loader = DataLoader(
-        test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+    valid_loader = DataLoader(
+        valid_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
@@ -166,10 +146,6 @@ def main(
         return 0.6 * loss_dice + 0.4 * loss_rmse
 
     writer = SummaryWriter(summary_dir)
-    train(
+    training_loop(
         model, optimizer, criterion, writer, device,
-        train_loader, test_loader, model_save_path, num_epochs)
-
-
-if __name__ == "__main__":
-    fire.Fire(main)
+        train_loader, valid_loader, model_save_path, num_epochs)
