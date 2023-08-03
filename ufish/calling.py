@@ -75,12 +75,15 @@ def call_spots_cc_center(
     all_centroids = centroids_sparse + centroids_dense
     all_centroids = np.array(all_centroids)  # type: ignore
     columns = [f'axis-{i}' for i in range(ndim)]
-    df = pd.DataFrame(
-        all_centroids,
-        columns=columns
-    )
-    if output_dense_mark:
-        dense_mark = np.zeros(len(all_centroids), dtype=bool)
-        dense_mark[len(centroids_sparse):] = True
-        df['is_dense'] = dense_mark
+    if all_centroids.shape[0] == 0:
+        df = pd.DataFrame(columns=columns)
+    else:
+        df = pd.DataFrame(
+            all_centroids,
+            columns=columns
+        )
+        if output_dense_mark:
+            dense_mark = np.zeros(len(all_centroids), dtype=bool)
+            dense_mark[len(centroids_sparse):] = True
+            df['is_dense'] = dense_mark
     return df
