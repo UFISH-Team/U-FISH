@@ -10,7 +10,7 @@ class UFishCLI():
             self,
             cuda: bool = True,
             local_store_path: str = '~/.ufish/',
-            weights_file_name: str = 'v1-for_benchmark.pth',
+            weights_file_name: str = 'v1.1-gaussian_target.pth',
             ):
         from .api import UFish
         self._ufish = UFish(
@@ -68,10 +68,41 @@ class UFishCLI():
         from skimage.io import imread
         img = imread(enhanced_img_path)
         logger.info(f'Calling spots in {enhanced_img_path}')
+        logger.info(
+            f'Parameters: binary_threshold={binary_threshold}, ',
+            f'cc_size_thresh={cc_size_thresh}')
         pred_df = self._ufish.call_spots_cc_center(
             img,
             binary_threshold=binary_threshold,
             cc_size_thresh=cc_size_thresh)
+        pred_df.to_csv(output_csv_path, index=False)
+        logger.info(f'Saved predicted spots to {output_csv_path}')
+
+    def call_spots_local_maxima(
+            self,
+            enhanced_img_path: str,
+            output_csv_path: str,
+            connectivity: int = 2,
+            intensity_threshold: float = 0.1,
+            ):
+        """Call spots by finding local maxima.
+
+        Args:
+            enhanced_img_path: Path to the enhanced image.
+            output_csv_path: Path to the output csv file.
+            connectivity: The connectivity for finding local maxima.
+            intensity_threshold: The threshold for the intensity.
+        """
+        from skimage.io import imread
+        img = imread(enhanced_img_path)
+        logger.info(f'Calling spots in {enhanced_img_path}')
+        logger.info(
+            f'Parameters: connectivity={connectivity}, ',
+            f'intensity_threshold={intensity_threshold}')
+        pred_df = self._ufish.call_spots_local_maxima(
+            img,
+            connectivity=connectivity,
+            intensity_threshold=intensity_threshold)
         pred_df.to_csv(output_csv_path, index=False)
         logger.info(f'Saved predicted spots to {output_csv_path}')
 
@@ -80,8 +111,8 @@ class UFishCLI():
             input_img_path: str,
             output_csv_path: str,
             enhanced_output_path: T.Optional[str] = None,
-            binary_threshold: T.Union[str, float] = 'otsu',
-            cc_size_thresh: int = 20
+            connectivity: int = 2,
+            intensity_threshold: float = 0.1,
             ):
         """Predict spots in a 2d image.
 
@@ -89,8 +120,8 @@ class UFishCLI():
             input_img_path: Path to the input image.
             output_csv_path: Path to the output csv file.
             enhanced_output_path: Path to the enhanced image.
-            binary_threshold: The threshold for binarizing the image.
-            cc_size_thresh: Connected component size threshold.
+            connectivity: The connectivity for finding local maxima.
+            intensity_threshold: The threshold for the intensity.
         """
         from skimage.io import imread, imsave
         if not self._weights_loaded:
@@ -98,8 +129,9 @@ class UFishCLI():
         logger.info(f'Predicting {input_img_path}.')
         img = imread(input_img_path)
         pred_df, enhanced = self._ufish.pred_2d(
-            img, binary_threshold=binary_threshold,
-            cc_size_thresh=cc_size_thresh,
+            img,
+            connectivity=connectivity,
+            intensity_threshold=intensity_threshold,
             return_enhanced_img=True)
         pred_df.to_csv(output_csv_path, index=False)
         logger.info(f'Saved predicted spots to {output_csv_path}')
@@ -112,8 +144,8 @@ class UFishCLI():
             input_dir: str,
             output_dir: str,
             save_enhanced_img: bool = True,
-            binary_threshold: T.Union[str, float] = 'otsu',
-            cc_size_thresh: int = 20
+            connectivity: int = 2,
+            intensity_threshold: float = 0.1,
             ):
         """Predict spots in a directory of 2d images.
 
@@ -121,8 +153,8 @@ class UFishCLI():
             input_dir: Path to the input directory.
             output_dir: Path to the output directory.
             save_enhanced_img: Whether to save the enhanced image.
-            binary_threshold: The threshold for binarizing the image.
-            cc_size_thresh: Connected component size threshold.
+            connectivity: The connectivity for finding local maxima.
+            intensity_threshold: The threshold for the intensity.
         """
         if not self._weights_loaded:
             self.load_weights()
@@ -139,8 +171,8 @@ class UFishCLI():
                 str(input_path),
                 str(output_path),
                 str(enhanced_img_path) if save_enhanced_img else None,
-                binary_threshold=binary_threshold,
-                cc_size_thresh=cc_size_thresh,
+                connectivity=connectivity,
+                intensity_threshold=intensity_threshold,
             )
 
     def plot_2d_pred(

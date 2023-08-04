@@ -18,7 +18,7 @@ BASE_STORE_URL = 'https://huggingface.co/GangCaoLab/U-FISH/resolve/main/'
 class UFish():
     def __init__(
             self, cuda: bool = True,
-            default_weight_file: str = 'v1-for_benchmark.pth',
+            default_weight_file: str = 'v1.1-gaussian_target.pth',
             local_store_path: str = '~/.ufish/'
             ) -> None:
         """
@@ -64,11 +64,15 @@ class UFish():
         self.model.load_state_dict(state_dict)
 
     def load_weights_from_internet(
-            self, weight_file: T.Optional[str] = None) -> None:
+            self,
+            weight_file: T.Optional[str] = None,
+            max_retry: int = 8,
+            ) -> None:
         """Load weights from the huggingface repo.
 
         Args:
             weight_file: The weight file name to load.
+            max_retry: The maximum number of retries.
         """
         import torch
         weight_file = weight_file or self.default_weight_file
@@ -84,7 +88,18 @@ class UFish():
                 f'Downloading weights from {weight_url}, '
                 f'storing to {local_weight_path}.')
             local_weight_path.parent.mkdir(parents=True, exist_ok=True)
-            torch.hub.download_url_to_file(weight_url, local_weight_path)
+            try_count = 0
+            while try_count < max_retry:
+                try:
+                    torch.hub.download_url_to_file(
+                        weight_url, local_weight_path)
+                    break
+                except Exception as e:
+                    logger.warning(f'Error downloading weights: {e}')
+                    try_count += 1
+            else:
+                raise RuntimeError(
+                    f'Error downloading weights from {weight_url}.')
         self.load_weights(local_weight_path)
 
     def enhance_img(self, img: np.ndarray, batch_size: int = 4) -> np.ndarray:
@@ -149,18 +164,42 @@ class UFish():
         )
         return df
 
+    def call_spots_local_maxima(
+            self, enhanced_img: np.ndarray,
+            connectivity: int = 2,
+            intensity_threshold: float = 0.1,
+            ) -> pd.DataFrame:
+        """Call spots by finding the local maxima.
+
+        Args:
+            enhanced_img: The enhanced image.
+            connectivity: The connectivity for the local maxima.
+            intensity_threshold: The threshold for the intensity.
+
+        Returns:
+            A pandas dataframe containing the spots.
+        """
+        assert enhanced_img.ndim in (2, 3), 'Image must be 2D or 3D.'
+        from skimage.morphology import local_maxima
+        mask = local_maxima(enhanced_img, connectivity=connectivity)
+        mask = mask & (enhanced_img > intensity_threshold)
+        peaks = np.array(np.where(mask)).T
+        df = pd.DataFrame(
+            peaks, columns=[f'axis-{i}' for i in range(mask.ndim)])
+        return df
+
     def pred_2d(
             self, img: np.ndarray,
-            binary_threshold: T.Union[str, float] = 'otsu',
-            cc_size_thresh: int = 20,
+            connectivity: int = 2,
+            intensity_threshold: float = 0.1,
             return_enhanced_img: bool = False,
             ) -> T.Union[pd.DataFrame, T.Tuple[pd.DataFrame, np.ndarray]]:
         """Predict the spots in a 2D image.
 
         Args:
             img: The 2D image to predict.
-            binary_threshold: The threshold for binarizing the image.
-            cc_size_thresh: Connected component size threshold.
+            connectivity: The connectivity for the local maxima.
+            intensity_threshold: The threshold for the intensity.
             return_enhanced_img: Whether to return the enhanced image.
 
         Returns:
@@ -169,10 +208,11 @@ class UFish():
         """
         assert img.ndim == 2, 'Image must be 2D.'
         enhanced_img = self.enhance_img(img)
-        df = self.call_spots_cc_center(
+        df = self.call_spots_local_maxima(
             enhanced_img,
-            binary_threshold=binary_threshold,
-            cc_size_thresh=cc_size_thresh)
+            connectivity=connectivity,
+            intensity_threshold=intensity_threshold,
+        )
         if return_enhanced_img:
             return df, enhanced_img
         else:
