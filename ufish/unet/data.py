@@ -1,6 +1,8 @@
-import typing as T
 import os
 import random
+from pathlib import Path
+import typing as T
+
 import pandas as pd
 import numpy as np
 import torch
@@ -12,6 +14,7 @@ from skimage.morphology import dilation
 import skimage.morphology as morphology  # noqa: F401
 
 from ..utils.misc import scale_image
+from ..utils.log import logger
 
 
 class Reader:
@@ -58,6 +61,34 @@ class ListReader(Reader):
         image = self.img_list[idx]
         coordinates = self.coord_list[idx]
         sample = {'image': image, 'coords': coordinates}
+        return sample
+
+
+class DirReader(Reader):
+    """Read images and coordinates from
+    a directory of images and coordinates."""
+    def __init__(
+            self,
+            img_dir: str,
+            coord_dir: str,
+            img_glob: str = '*.tif',
+            coord_glob: str = '*.csv',
+            ):
+        self.img_dir = Path(img_dir)
+        self.coord_dir = Path(coord_dir)
+        self.img_paths = sorted(self.img_dir.glob(img_glob))
+        self.coord_paths = sorted(self.coord_dir.glob(coord_glob))
+
+    def __len__(self):
+        return len(self.img_paths)
+
+    def __getitem__(self, idx: int):
+        img_path = self.img_paths[idx]
+        coord_path = self.coord_paths[idx]
+        logger.debug(f"Reading {img_path} and {coord_path}")
+        image = imread(img_path)
+        coordinates = pd.read_csv(coord_path)
+        sample = {'image': image, 'coords': coordinates.values}
         return sample
 
 
@@ -143,6 +174,19 @@ class FISHSpotsDataset(Dataset):
             transform=None):
         """Create a dataset from a list of images and coordinates."""
         reader = ListReader(img_list, coord_list)
+        return cls(reader, process_func, transform)
+
+    @classmethod
+    def from_dir(
+            cls,
+            img_dir: str,
+            coord_dir: str,
+            img_glob: str = '*.tif',
+            coord_glob: str = '*.csv',
+            process_func: T.Optional[T.Callable] = None,
+            transform=None):
+        """Create a dataset from a directory of images and coordinates."""
+        reader = DirReader(img_dir, coord_dir, img_glob, coord_glob)
         return cls(reader, process_func, transform)
 
 

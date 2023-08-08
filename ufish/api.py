@@ -329,9 +329,10 @@ class UFish():
 
     def train(
             self,
-            dataset_root_path: str,
-            meta_train_path: str,
-            meta_valid_path: str,
+            train_dir: str,
+            valid_dir: str,
+            img_glob: str = '*.tif',
+            coord_glob: str = '*.csv',
             target_process: str = 'gaussian',
             data_argu: bool = False,
             pretrained_model_path: T.Optional[str] = None,
@@ -344,9 +345,12 @@ class UFish():
         """Train the U-Net model.
 
         Args:
-            dataset_root_path: The root path of the dataset.
-            meta_train_path: The path to the training metadata csv file.
-            meta_valid_path: The path to the validation metadata csv file.
+            train_dir: The directory containing the training images
+                and coordinates.
+            valid_dir: The directory containing the validation images
+                and coordinates.
+            img_glob: The glob pattern for the image files.
+            coord_glob: The glob pattern for the coordinate files.
             target_process: The target image processing method.
                 'gaussian' or 'dialation'. default 'gaussian'.
             data_argu: Whether to use data augmentation.
@@ -372,23 +376,17 @@ class UFish():
         else:
             process_func = FISHSpotsDataset.dialate_mask
 
-        logger.info(
-            f"Loading training dataset from {meta_train_path} "
-            f"validation dataset from {meta_valid_path} "
-            f"Dataset root path: {dataset_root_path}"
-        )
-        train_dataset = FISHSpotsDataset.from_meta_csv(
-            root_dir=dataset_root_path,
-            meta_csv_path=meta_train_path,
-            process_func=process_func,
-            transform=transform
-        )
-
-        valid_dataset = FISHSpotsDataset.from_meta_csv(
-            root_dir=dataset_root_path,
-            meta_csv_path=meta_valid_path,
-            process_func=process_func,
-        )
+        logger.info(f'Image glob: {img_glob}, Coordinate glob: {coord_glob}.')
+        logger.info(f'Loading training data from {train_dir}.')
+        train_dataset = FISHSpotsDataset.from_dir(
+            train_dir, train_dir,
+            img_glob=img_glob, coord_glob=coord_glob,
+            process_func=process_func, transform=transform)
+        logger.info(f'Loading validation data from {valid_dir}.')
+        valid_dataset = FISHSpotsDataset.from_dir(
+            valid_dir, valid_dir,
+            img_glob=img_glob, coord_glob=coord_glob,
+            process_func=process_func, transform=transform)
         logger.info(
             f"Training dataset size: {len(train_dataset)}, "
             f"Validation dataset size: {len(valid_dataset)}"
