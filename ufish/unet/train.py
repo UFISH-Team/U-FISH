@@ -6,7 +6,6 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 from torch import Tensor
 
-from .model import UNet
 from .utils import DiceLoss, RMSELoss
 from .data import FISHSpotsDataset
 from ..utils.log import logger
@@ -114,9 +113,9 @@ def training_loop(
 
 
 def train_on_dataset(
+        model: torch.nn.Module,
         train_dataset: FISHSpotsDataset,
         valid_dataset: FISHSpotsDataset,
-        pretrained_model_path: T.Optional[str] = None,
         num_epochs: int = 50,
         batch_size: int = 8,
         lr: float = 1e-4,
@@ -127,9 +126,9 @@ def train_on_dataset(
     """Train the UNet model.
 
     Args:
+        model: The model to train.
         train_dataset: The training dataset.
         valid_dataset: The validation dataset.
-        pretrained_model_path: The path to the pretrained model.
         num_epochs: The number of epochs to train for.
         batch_size: The batch size.
         lr: The learning rate.
@@ -144,11 +143,7 @@ def train_on_dataset(
         valid_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    logger.info(f"Using device: {device}")
-    model = UNet(1, 1, 4)
-    if pretrained_model_path is not None:
-        logger.info(f"Loading pretrained model from {pretrained_model_path}")
-        model.load_state_dict(torch.load(pretrained_model_path))
+    logger.info(f"Training using device: {device}")
     model = model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     rmse_loss = RMSELoss()

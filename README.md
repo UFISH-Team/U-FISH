@@ -19,14 +19,15 @@ The underlying concept of our method, U-FISH, acknowledges the significant varia
 - [ ] Napari plugin
 - [ ] deploy
   + [x] setup.py
-  + [ ] upload to PyPI
+  + [x] upload model weights to huggingface
+  + [ ] upload package to PyPI
   + [ ] Upload to BioImageIO model zoo
 - [ ] Add more datasets
+    + [x] ExSeq
     + [ ] MER-FISH
     + [ ] seqFISH
-    + [ ] ExSeq
-- [ ] Try other signal footprint
-    + [ ] Gaussian
+- [x] Try other signal footprint
+    + [x] Gaussian
     + [ ] Other shape
 - [ ] Benchmark
 - [ ] 3D integration method
@@ -66,43 +67,34 @@ fig_eval = ufish.plot_evaluation_result(
     img, pred_spots, true_spots, cutoff=3.0)
 ```
 
+API for training:
+
+```python
+from ufish.api import UFish
+
+ufish = UFish()
+
+# loading a pre-trained model
+# if you want to train from scratch, just skip this step
+ufish.load_weights("path/to/weights")
+
+ufish.train(
+    'path/to/train_dir',
+    'path/to/val_dir',
+    num_epochs=100,
+    lr=1e-4,
+    model_save_path='path/to/save/model',
+)
+```
+
 CLI usage:
 
 ```bash
 # list all sub-commands:
 $ python -m ufish
-NAME
-    ufish
 
-SYNOPSIS
-    ufish - COMMAND
-
-COMMANDS
-    COMMAND is one of the following:
-
-     call_spots_cc_center
-       Call spots by finding connected components and taking the centroids.
-
-     enhance_img
-       Enhance an image.
-
-     load_weights
-       Load weights from a local file or the internet.
-
-     plot_2d_eval
-       Plot the evaluation result.
-
-     plot_2d_pred
-       Plot the predicted spots on the image.
-
-     pred_2d_img
-       Predict spots in a 2d image.
-
-     pred_2d_imgs
-       Predict spots in a directory of 2d images.
-
-     train
-       Train the U-Net model.
+# using --help to see details of each sub-command, e.g.:
+$ ufish pred_2d_img --help
 
 # predict one image
 $ ufish pred_2d_img input.tiff output.csv
@@ -110,8 +102,14 @@ $ ufish pred_2d_img input.tiff output.csv
 # predict all images in a directory
 $ ufish pred_2d_imgs input_dir output_dir
 
-# using --help to see details of each sub-command, e.g.:
-$ ufish pred_2d_img --help
+# load a trained model and predict
+$ ufish load_weights path/to/weights - pred_2d_img input.tiff output.csv
+
+# training from scratch
+$ ufish train path/to/train_dir path/to/val_dir --model_save_path path/to/save/model
+
+# training from a pre-trained model (fine-tuning)
+$ ufish load_weights path/to/weights - train path/to/train_dir path/to/val_dir --model_save_path path/to/save/model
 ```
 
 ## Dataset

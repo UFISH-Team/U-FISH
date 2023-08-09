@@ -251,7 +251,6 @@ class UFishCLI():
             coord_glob: str = '*.csv',
             target_process: str = 'gaussian',
             data_argu: bool = False,
-            pretrained_model_path: T.Optional[str] = None,
             num_epochs: int = 50,
             batch_size: int = 8,
             lr: float = 1e-4,
@@ -271,7 +270,6 @@ class UFishCLI():
             target_process: The target image processing method.
                 'gaussian' or 'dialation'. default 'gaussian'.
             data_argu: Whether to use data augmentation.
-            pretrained_model_path: The path to the pretrained model.
             num_epochs: The number of epochs to train.
             batch_size: The batch size.
             lr: The learning rate.
@@ -285,7 +283,6 @@ class UFishCLI():
             coord_glob=coord_glob,
             target_process=target_process,
             data_argu=data_argu,
-            pretrained_model_path=pretrained_model_path,
             num_epochs=num_epochs,
             batch_size=batch_size,
             lr=lr,

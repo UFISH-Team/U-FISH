@@ -58,7 +58,7 @@ class UFish():
         self._init_model()
         assert self.model is not None
         weights_path = str(weights_path)
-        logger.info(f'Loading weights from {weights_path}.')
+        logger.info(f'Loading weights from {weights_path}')
         device = torch.device('cuda' if self.cuda else 'cpu')
         state_dict = torch.load(weights_path, map_location=device)
         self.model.load_state_dict(state_dict)
@@ -67,18 +67,20 @@ class UFish():
             self,
             weight_file: T.Optional[str] = None,
             max_retry: int = 8,
+            force_download: bool = False,
             ) -> None:
         """Load weights from the huggingface repo.
 
         Args:
             weight_file: The weight file name to load.
             max_retry: The maximum number of retries.
+            force_download: Whether to force download the weights.
         """
         import torch
         weight_file = weight_file or self.default_weight_file
         weight_url = self.store_base_url + weight_file
         local_weight_path = self.local_store_path / weight_file
-        if local_weight_path.exists():
+        if local_weight_path.exists() and (not force_download):
             logger.info(
                 f'Local weights {local_weight_path} exists, '
                 'skip downloading.'
@@ -335,7 +337,6 @@ class UFish():
             coord_glob: str = '*.csv',
             target_process: str = 'gaussian',
             data_argu: bool = False,
-            pretrained_model_path: T.Optional[str] = None,
             num_epochs: int = 50,
             batch_size: int = 8,
             lr: float = 1e-4,
@@ -355,7 +356,6 @@ class UFish():
             target_process: The target image processing method.
                 'gaussian' or 'dialation'. default 'gaussian'.
             data_argu: Whether to use data augmentation.
-            pretrained_model_path: The path to the pretrained model.
             num_epochs: The number of epochs to train.
             batch_size: The batch size.
             lr: The learning rate.
@@ -365,6 +365,11 @@ class UFish():
         """
         from .unet.train import train_on_dataset
         from .unet.data import FISHSpotsDataset
+        if self.model is None:
+            logger.info('Model is not initialized. Will initialize a new one.')
+            self._init_model()
+        assert self.model is not None
+
         if data_argu:
             logger.info('Using data augmentation.')
             from .unet.data import composed_transform
@@ -378,13 +383,13 @@ class UFish():
         else:
             process_func = FISHSpotsDataset.dialate_mask
 
-        logger.info(f'Image glob: {img_glob}, Coordinate glob: {coord_glob}.')
-        logger.info(f'Loading training data from {train_dir}.')
+        logger.info(f'Image glob: {img_glob}, Coordinate glob: {coord_glob}')
+        logger.info(f'Loading training data from {train_dir}')
         train_dataset = FISHSpotsDataset.from_dir(
             train_dir, train_dir,
             img_glob=img_glob, coord_glob=coord_glob,
             process_func=process_func, transform=transform)
-        logger.info(f'Loading validation data from {valid_dir}.')
+        logger.info(f'Loading validation data from {valid_dir}')
         valid_dataset = FISHSpotsDataset.from_dir(
             valid_dir, valid_dir,
             img_glob=img_glob, coord_glob=coord_glob,
@@ -399,8 +404,8 @@ class UFish():
             f"Learning rate: {lr}"
         )
         train_on_dataset(
+            self.model,
             train_dataset, valid_dataset,
-            pretrained_model_path=pretrained_model_path,
             num_epochs=num_epochs,
             batch_size=batch_size,
             lr=lr,
