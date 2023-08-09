@@ -33,15 +33,26 @@ class UFishCLI():
 
     def load_weights(
             self,
-            weights_path: T.Optional[str] = None):
+            weights_path: T.Optional[str] = None,
+            weight_file: T.Optional[str] = None,
+            max_retry: int = 8,
+            ):
         """Load weights from a local file or the internet.
 
         Args:
-            weights_path: The path to the weights file."""
+            weights_path: The path to the weights file.
+            weight_file: The name of the weights file on the internet.
+                See https://huggingface.co/GangCaoLab/U-FISH/tree/main
+                for available weights files.
+            max_retry: The maximum number of retries to download the weights.
+        """
         if weights_path is not None:
             self._ufish.load_weights(weights_path)
         else:
-            self._ufish.load_weights_from_internet()
+            self._ufish.load_weights_from_internet(
+                weight_file=weight_file,
+                max_retry=max_retry,
+            )
         self._weights_loaded = True
         return self
 
