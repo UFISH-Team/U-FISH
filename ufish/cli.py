@@ -1,3 +1,4 @@
+import sys
 import typing as T
 from os.path import splitext
 from pathlib import Path
@@ -19,6 +20,16 @@ class UFishCLI():
             local_store_path=local_store_path,
         )
         self._weights_loaded = False
+
+    def set_log_level(
+            self,
+            level: str = 'INFO'):
+        """Set the log level."""
+        logger.remove()
+        logger.add(
+            sys.stderr, level=level,
+        )
+        return self
 
     def load_weights(
             self,
@@ -234,7 +245,8 @@ class UFishCLI():
             batch_size: int = 8,
             lr: float = 1e-4,
             summary_dir: str = "runs/unet",
-            model_save_path: str = "best_unet_model.pth"
+            model_save_path: str = "best_unet_model.pth",
+            only_save_best: bool = True,
             ):
         """Train the U-Net model.
 
@@ -267,5 +279,6 @@ class UFishCLI():
             batch_size=batch_size,
             lr=lr,
             summary_dir=summary_dir,
-            model_save_path=model_save_path
+            model_save_path=model_save_path,
+            only_save_best=only_save_best,
         )

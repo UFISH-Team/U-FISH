@@ -24,6 +24,12 @@ class Reader:
     def __getitem__(self, idx: int):
         pass
 
+    def read_coords(self, path: str, ndim: int) -> np.ndarray:
+        coordinates = pd.read_csv(path)
+        axes = [f'axis-{i}' for i in range(ndim)]
+        coords = coordinates[axes].values
+        return coords
+
 
 class FileReader(Reader):
     """Read images and coordinates from
@@ -39,8 +45,8 @@ class FileReader(Reader):
         img_path = os.path.join(self.root_dir, self.meta_data.iloc[idx, 0])
         image = imread(img_path)
         coord_path = os.path.join(self.root_dir, self.meta_data.iloc[idx, 1])
-        coordinates = pd.read_csv(coord_path)
-        sample = {'image': image, 'coords': coordinates.values}
+        coords = self.read_coords(coord_path, image.ndim)
+        sample = {'image': image, 'coords': coords}
         return sample
 
 
@@ -78,6 +84,18 @@ class DirReader(Reader):
         self.coord_dir = Path(coord_dir)
         self.img_paths = sorted(self.img_dir.glob(img_glob))
         self.coord_paths = sorted(self.coord_dir.glob(coord_glob))
+        assert len(self.img_paths) == len(self.coord_paths), \
+            "Number of images and coordinates must match."
+        self.check_prefix()
+
+    def check_prefix(self):
+        for img_path, coord_path in zip(self.img_paths, self.coord_paths):
+            img_prefix = img_path.stem
+            coord_prefix = coord_path.stem
+            if img_prefix != coord_prefix:
+                logger.warning(
+                    f"Image prefix {img_prefix} does not match "
+                    f"coordinate prefix {coord_prefix}")
 
     def __len__(self):
         return len(self.img_paths)
@@ -85,10 +103,9 @@ class DirReader(Reader):
     def __getitem__(self, idx: int):
         img_path = self.img_paths[idx]
         coord_path = self.coord_paths[idx]
-        logger.debug(f"Reading {img_path} and {coord_path}")
         image = imread(img_path)
-        coordinates = pd.read_csv(coord_path)
-        sample = {'image': image, 'coords': coordinates.values}
+        coords = self.read_coords(coord_path, image.ndim)
+        sample = {'image': image, 'coords': coords}
         return sample
 
 

@@ -13,13 +13,16 @@ from ..utils.log import logger
 
 
 def training_loop(
-        model: torch.nn.Module, optimizer: torch.optim.Optimizer,
+        model: torch.nn.Module,
+        optimizer: torch.optim.Optimizer,
         criterion: T.Callable[[Tensor, Tensor], Tensor],
         writer: SummaryWriter,
         device: torch.device,
         train_loader: DataLoader, valid_loader: DataLoader,
         model_save_path: str,
-        num_epochs=50):
+        only_save_best: bool = True,
+        num_epochs=50,
+        ):
     """
     The training loop.
 
@@ -32,6 +35,7 @@ def training_loop(
         train_loader: The training data loader.
         valid_loader: The valid data loader.
         model_save_path: The path to save the model to.
+        only_save_best: Whether to only save the best model.
         num_epochs: The number of epochs to train for.
     """
     best_val_loss = float("inf")
@@ -97,10 +101,14 @@ def training_loop(
             f"Train Loss: {epoch_loss:.4f}, Val Loss: {val_loss:.4f}"
         )
 
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
+        if only_save_best:
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                torch.save(model.state_dict(), model_save_path)
+                logger.info(f"Best model saved with Val Loss: {val_loss:.4f}")
+        else:
             torch.save(model.state_dict(), model_save_path)
-            logger.info(f"Best model saved with Val Loss: {val_loss:.4f}")
+            logger.info(f"Model saved with Val Loss: {val_loss:.4f}")
 
     writer.close()
 
@@ -113,7 +121,8 @@ def train_on_dataset(
         batch_size: int = 8,
         lr: float = 1e-4,
         summary_dir: str = "runs/unet",
-        model_save_path: str = "best_unet_model.pth"
+        model_save_path: str = "best_unet_model.pth",
+        only_save_best: bool = True,
         ):
     """Train the UNet model.
 
@@ -126,6 +135,7 @@ def train_on_dataset(
         lr: The learning rate.
         summary_dir: The directory to save the TensorBoard summary to.
         model_save_path: The path to save the best model to.
+        only_save_best: Whether to only save the best model.
     """
 
     train_loader = DataLoader(
@@ -152,4 +162,6 @@ def train_on_dataset(
     writer = SummaryWriter(summary_dir)
     training_loop(
         model, optimizer, criterion, writer, device,
-        train_loader, valid_loader, model_save_path, num_epochs)
+        train_loader, valid_loader, model_save_path,
+        only_save_best,
+        num_epochs)
