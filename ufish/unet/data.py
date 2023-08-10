@@ -128,6 +128,8 @@ class FISHSpotsDataset(Dataset):
     @staticmethod
     def gaussian_filter(mask: np.ndarray, sigma=1) -> np.ndarray:
         """Apply Gaussian filter to the mask."""
+        if mask.max() == 0:
+            return mask
         peak = np.stack(np.where(mask > 0), axis=1)
         res = ndi.gaussian_filter(mask, sigma=sigma)
         peak_val = res[tuple(peak.T)]
