@@ -29,8 +29,7 @@ class ResidualBlock(nn.Module):
         out = self.conv(x)
         out = self.BN(out)
         out = self.relu(out)
-        out = x+out
-
+        out = x + out
         return out
 
 

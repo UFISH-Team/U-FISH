@@ -18,7 +18,7 @@ BASE_STORE_URL = 'https://huggingface.co/GangCaoLab/U-FISH/resolve/main/'
 class UFish():
     def __init__(
             self, cuda: bool = True,
-            default_weight_file: str = 'v1.1-gaussian_target.pth',
+            default_weights_file: str = 'v1.1-gaussian_target.pth',
             local_store_path: str = '~/.ufish/'
             ) -> None:
         """
@@ -29,7 +29,7 @@ class UFish():
         """
         self._cuda = cuda
         self.model: T.Optional["UNet"] = None
-        self.default_weight_file = default_weight_file
+        self.default_weights_file = default_weights_file
         self.store_base_url = BASE_STORE_URL
         self.local_store_path = Path(
             os.path.expanduser(local_store_path))
@@ -65,21 +65,23 @@ class UFish():
 
     def load_weights_from_internet(
             self,
-            weight_file: T.Optional[str] = None,
+            weights_file: T.Optional[str] = None,
             max_retry: int = 8,
             force_download: bool = False,
             ) -> None:
         """Load weights from the huggingface repo.
 
         Args:
-            weight_file: The weight file name to load.
+            weights_file: The name of the weights file on the internet.
+                See https://huggingface.co/GangCaoLab/U-FISH/tree/main
+                for available weights files.
             max_retry: The maximum number of retries.
             force_download: Whether to force download the weights.
         """
         import torch
-        weight_file = weight_file or self.default_weight_file
-        weight_url = self.store_base_url + weight_file
-        local_weight_path = self.local_store_path / weight_file
+        weights_file = weights_file or self.default_weights_file
+        weight_url = self.store_base_url + weights_file
+        local_weight_path = self.local_store_path / weights_file
         if local_weight_path.exists() and (not force_download):
             logger.info(
                 f'Local weights {local_weight_path} exists, '

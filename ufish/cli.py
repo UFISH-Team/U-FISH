@@ -16,7 +16,7 @@ class UFishCLI():
         from .api import UFish
         self._ufish = UFish(
             cuda=cuda,
-            default_weight_file=weights_file_name,
+            default_weights_file=weights_file_name,
             local_store_path=local_store_path,
         )
         self._weights_loaded = False
@@ -34,24 +34,27 @@ class UFishCLI():
     def load_weights(
             self,
             weights_path: T.Optional[str] = None,
-            weight_file: T.Optional[str] = None,
+            weights_file: T.Optional[str] = None,
             max_retry: int = 8,
+            force_download: bool = False,
             ):
         """Load weights from a local file or the internet.
 
         Args:
             weights_path: The path to the weights file.
-            weight_file: The name of the weights file on the internet.
+            weights_file: The name of the weights file on the internet.
                 See https://huggingface.co/GangCaoLab/U-FISH/tree/main
                 for available weights files.
             max_retry: The maximum number of retries to download the weights.
+            force_download: Whether to force download the weights.
         """
         if weights_path is not None:
             self._ufish.load_weights(weights_path)
         else:
             self._ufish.load_weights_from_internet(
-                weight_file=weight_file,
+                weights_file=weights_file,
                 max_retry=max_retry,
+                force_download=force_download,
             )
         self._weights_loaded = True
         return self
