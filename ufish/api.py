@@ -28,6 +28,7 @@ class UFish():
             local_store_path: The local path to store the weights.
         """
         self._cuda = cuda
+        self._infer_mode = False
         self.model: T.Optional["UNet"] = None
         self.default_weights_file = default_weights_file
         self.store_base_url = BASE_STORE_URL
@@ -48,6 +49,18 @@ class UFish():
                 logger.warning('CUDA is not available, using CPU.')
         else:
             logger.info('CUDA is not used, using CPU.')
+
+    def _turn_on_infer_mode(self, trace_model: bool = False) -> None:
+        """Turn on the infer mode."""
+        if self._infer_mode:
+            return
+        self._infer_mode = True
+        self.model.eval()
+        if trace_model:
+            import torch
+            device = next(self.model.parameters()).device
+            inp = torch.rand(1, 1, 512, 512).to(device)
+            self.model = torch.jit.trace(self.model, inp)
 
     def load_weights(self, weights_path: T.Union[Path, str]) -> None:
         """Load weights from a local file.
@@ -90,7 +103,7 @@ class UFish():
         else:
             logger.info(
                 f'Downloading weights from {weight_url}, '
-                f'storing to {local_weight_path}.')
+                f'storing to {local_weight_path}')
             local_weight_path.parent.mkdir(parents=True, exist_ok=True)
             try_count = 0
             while try_count < max_retry:
@@ -110,6 +123,7 @@ class UFish():
         """Enhance the image using the U-Net model."""
         if self.model is None:
             raise RuntimeError('Model is not initialized.')
+        self._turn_on_infer_mode()
         from .utils.misc import scale_image
         img = scale_image(img)
         if img.ndim == 2:

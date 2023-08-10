@@ -151,7 +151,7 @@ class UFishCLI():
         from skimage.io import imread, imsave
         if not self._weights_loaded:
             self.load_weights()
-        logger.info(f'Predicting {input_img_path}.')
+        logger.info(f'Predicting {input_img_path}')
         img = imread(input_img_path)
         pred_df, enhanced = self._ufish.pred_2d(
             img,
@@ -168,6 +168,7 @@ class UFishCLI():
             self,
             input_dir: str,
             output_dir: str,
+            img_glob: T.Optional[str] = None,
             save_enhanced_img: bool = True,
             connectivity: int = 2,
             intensity_threshold: float = 0.1,
@@ -177,6 +178,7 @@ class UFishCLI():
         Args:
             input_dir: Path to the input directory.
             output_dir: Path to the output directory.
+            img_glob: The glob pattern for the images.
             save_enhanced_img: Whether to save the enhanced image.
             connectivity: The connectivity for finding local maxima.
             intensity_threshold: The threshold for the intensity.
@@ -188,7 +190,11 @@ class UFishCLI():
         out_dir_path.mkdir(parents=True, exist_ok=True)
         logger.info(f'Predicting images in {in_dir_path}')
         logger.info(f'Saving results to {out_dir_path}')
-        for input_path in in_dir_path.iterdir():
+        if img_glob is None:
+            img_glob = '*'
+        else:
+            img_glob = img_glob.strip()
+        for input_path in in_dir_path.glob(img_glob):
             input_prefix = splitext(input_path.name)[0]
             output_path = out_dir_path / (input_prefix + '.pred.csv')
             enhanced_img_path = out_dir_path / (input_prefix + '.enhanced.tif')
