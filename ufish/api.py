@@ -1,4 +1,5 @@
 import os
+import time
 import typing as T
 from pathlib import Path
 
@@ -114,6 +115,7 @@ class UFish():
                 except Exception as e:
                     logger.warning(f'Error downloading weights: {e}')
                     try_count += 1
+                    time.sleep(0.5)
             else:
                 raise RuntimeError(
                     f'Error downloading weights from {weight_url}.')
