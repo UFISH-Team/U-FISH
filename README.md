@@ -22,7 +22,7 @@ The underlying concept of our method, U-FISH, acknowledges the significant varia
   + [x] upload model weights to huggingface
   + [ ] upload package to PyPI
   + [ ] Upload to BioImageIO model zoo
-- [ ] Add more datasets
+- [x] Add more datasets
     + [x] ExSeq
     + [x] MER-FISH
     + [x] seqFISH
