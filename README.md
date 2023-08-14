@@ -24,8 +24,8 @@ The underlying concept of our method, U-FISH, acknowledges the significant varia
   + [ ] Upload to BioImageIO model zoo
 - [ ] Add more datasets
     + [x] ExSeq
-    + [ ] MER-FISH
-    + [ ] seqFISH
+    + [x] MER-FISH
+    + [x] seqFISH
 - [x] Try other signal footprint
     + [x] Gaussian
     + [ ] Other shape
