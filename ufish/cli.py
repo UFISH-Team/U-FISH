@@ -254,8 +254,9 @@ class UFishCLI():
 
     def train(
             self,
-            train_dir: str,
-            valid_dir: str,
+            train_path: str,
+            valid_path: str,
+            root_dir: T.Optional[str] = None,
             img_glob: str = '*.tif',
             coord_glob: str = '*.csv',
             target_process: str = 'gaussian',
@@ -270,11 +271,14 @@ class UFishCLI():
         """Train the U-Net model.
 
         Args:
-            train_dir: The directory containing the training images
-                and coordinates.
-            valid_dir: The directory containing the validation images
-                and coordinates.
-            img_glob: The glob pattern for the image files.
+            train_path: The path to the training dataset.
+                Path to a directory containing images and coordinates,
+                or a meta csv file.
+            valid_path: The path to the validation dataset.
+                Path to a directory containing images and coordinates,
+                or a meta csv file.
+            root_dir: The root directory of the dataset.
+                If using meta csv, the root directory of the dataset.
             coord_glob: The glob pattern for the coordinate files.
             target_process: The target image processing method.
                 'gaussian' or 'dialation'. default 'gaussian'.
@@ -286,8 +290,9 @@ class UFishCLI():
             model_save_path: The path to save the best model to.
         """
         self._ufish.train(
-            train_dir=train_dir,
-            valid_dir=valid_dir,
+            train_path=train_path,
+            valid_path=valid_path,
+            root_dir=root_dir,
             img_glob=img_glob,
             coord_glob=coord_glob,
             target_process=target_process,

@@ -127,7 +127,7 @@ class UFish():
             raise RuntimeError('Model is not initialized.')
         self._turn_on_infer_mode()
         from .utils.misc import scale_image
-        img = scale_image(img)
+        img = scale_image(img, warning=True)
         if img.ndim == 2:
             output = self._enhance_img2d(img)
         elif img.ndim == 3:
@@ -347,10 +347,47 @@ class UFish():
         )
         return plt2d.fig
 
+    def _load_dataset(
+            self,
+            path: str,
+            root_dir_path: T.Optional[str] = None,
+            img_glob: str = '*.tif',
+            coord_glob: str = '*.csv',
+            process_func=None,
+            transform=None,
+            ):
+        """Load a dataset from a path."""
+        from .unet.data import FISHSpotsDataset
+        _path = Path(path)
+        if _path.is_dir():
+            if root_dir_path is not None:
+                logger.info(f"Dataset's root directory: {root_dir_path}")
+                _path = Path(root_dir_path) / _path
+            logger.info(f"Loading dataset from dir: {_path}")
+            logger.info(
+                f'Image glob: {img_glob}, Coordinate glob: {coord_glob}')
+            _path_str = str(_path)
+            dataset = FISHSpotsDataset.from_dir(
+                _path_str, _path_str,
+                img_glob=img_glob, coord_glob=coord_glob,
+                process_func=process_func, transform=transform)
+        else:
+            logger.info(f"Loading dataset using meta csv: {_path}")
+            assert _path.suffix == '.csv', \
+                "Meta file must be a csv file."
+            root_dir = root_dir_path or _path.parent
+            logger.info(f'Data root directory: {root_dir}')
+            dataset = FISHSpotsDataset.from_meta_csv(
+                root_dir=root_dir, meta_csv_path=str(_path),
+                process_func=process_func, transform=transform,
+            )
+        return dataset
+
     def train(
             self,
-            train_dir: str,
-            valid_dir: str,
+            train_path: str,
+            valid_path: str,
+            root_dir: T.Optional[str] = None,
             img_glob: str = '*.tif',
             coord_glob: str = '*.csv',
             target_process: str = 'gaussian',
@@ -365,10 +402,14 @@ class UFish():
         """Train the U-Net model.
 
         Args:
-            train_dir: The directory containing the training images
-                and coordinates.
-            valid_dir: The directory containing the validation images
-                and coordinates.
+            train_path: The path to the training dataset.
+                Path to a directory containing images and coordinates,
+                or a meta csv file.
+            valid_path: The path to the validation dataset.
+                Path to a directory containing images and coordinates,
+                or a meta csv file.
+            root_dir: The root directory of the dataset.
+                If using meta csv, the root directory of the dataset.
             img_glob: The glob pattern for the image files.
             coord_glob: The glob pattern for the coordinate files.
             target_process: The target image processing method.
@@ -401,17 +442,18 @@ class UFish():
         else:
             process_func = FISHSpotsDataset.dialate_mask
 
-        logger.info(f'Image glob: {img_glob}, Coordinate glob: {coord_glob}')
-        logger.info(f'Loading training data from {train_dir}')
-        train_dataset = FISHSpotsDataset.from_dir(
-            train_dir, train_dir,
+        logger.info(f"Loading training dataset from {train_path}")
+        train_dataset = self._load_dataset(
+            train_path, root_dir_path=root_dir,
             img_glob=img_glob, coord_glob=coord_glob,
-            process_func=process_func, transform=transform)
-        logger.info(f'Loading validation data from {valid_dir}')
-        valid_dataset = FISHSpotsDataset.from_dir(
-            valid_dir, valid_dir,
+            process_func=process_func, transform=transform,
+        )
+        logger.info(f"Loading validation dataset from {valid_path}")
+        valid_dataset = self._load_dataset(
+            valid_path, root_dir_path=root_dir,
             img_glob=img_glob, coord_glob=coord_glob,
-            process_func=process_func, transform=transform)
+            process_func=process_func, transform=transform,
+        )
         logger.info(
             f"Training dataset size: {len(train_dataset)}, "
             f"Validation dataset size: {len(valid_dataset)}"

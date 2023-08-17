@@ -5,6 +5,7 @@ from skimage.exposure import rescale_intensity
 def scale_image(
         img: np.ndarray,
         big_quantile: float = 0.9999,
+        warning: bool = False,
         ) -> np.ndarray:
     """Scale an image to 0-255.
     If the image has outlier values,
@@ -13,15 +14,17 @@ def scale_image(
     Args:
         img: Image to scale.
         big_quantile: Quantile to calculate the big value.
+        warning: Whether to print a warning message.
     """
     dtype = img.dtype
     img = img.astype(np.float32)
     if dtype is not np.uint8:
         big_value = np.quantile(img, big_quantile)
         if img_has_outlier(img, big_value):
-            from .log import logger
-            logger.warning(
-                'Image has outlier values. ')
+            if warning:
+                from .log import logger
+                logger.warning(
+                    'Image has outlier values. ')
             in_range = (0, big_value)
         else:
             in_range = 'image'
