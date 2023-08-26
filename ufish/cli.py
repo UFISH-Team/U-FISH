@@ -166,8 +166,9 @@ class UFishCLI():
 
     def pred_2d_imgs(
             self,
-            input_dir: str,
+            input_path: str,
             output_dir: str,
+            data_base_dir: T.Optional[str] = None,
             img_glob: T.Optional[str] = None,
             save_enhanced_img: bool = True,
             connectivity: int = 2,
@@ -176,8 +177,11 @@ class UFishCLI():
         """Predict spots in a directory of 2d images.
 
         Args:
-            input_dir: Path to the input directory.
+            input_path: Path to the input directory or
+                the meta csv file.
             output_dir: Path to the output directory.
+            data_base_dir: The base directory of the dataset.
+                Only used when input_path is a meta csv file.
             img_glob: The glob pattern for the images.
             save_enhanced_img: Whether to save the enhanced image.
             connectivity: The connectivity for finding local maxima.
@@ -185,21 +189,28 @@ class UFishCLI():
         """
         if not self._weights_loaded:
             self.load_weights()
-        in_dir_path = Path(input_dir)
+        if input_path.endswith('.csv'):
+            import pandas as pd
+            meta_df = pd.read_csv(input_path)
+            base_dir = Path(data_base_dir)
+            input_imgs = [base_dir / p for p in meta_df['image_path']]
+        else:
+            if img_glob is None:
+                img_glob = '*'
+            else:
+                img_glob = img_glob.strip()
+            in_dir_path = Path(input_path)
+            input_imgs = list(in_dir_path.glob(img_glob))
         out_dir_path = Path(output_dir)
         out_dir_path.mkdir(parents=True, exist_ok=True)
-        logger.info(f'Predicting images in {in_dir_path}')
+        logger.info(f'Predicting images in {input_path}')
         logger.info(f'Saving results to {out_dir_path}')
-        if img_glob is None:
-            img_glob = '*'
-        else:
-            img_glob = img_glob.strip()
-        for input_path in in_dir_path.glob(img_glob):
-            input_prefix = splitext(input_path.name)[0]
+        for in_path in input_imgs:
+            input_prefix = splitext(in_path.name)[0]
             output_path = out_dir_path / (input_prefix + '.pred.csv')
             enhanced_img_path = out_dir_path / (input_prefix + '.enhanced.tif')
             self.pred_2d_img(
-                str(input_path),
+                str(in_path),
                 str(output_path),
                 str(enhanced_img_path) if save_enhanced_img else None,
                 connectivity=connectivity,
