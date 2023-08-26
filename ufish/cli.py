@@ -263,6 +263,110 @@ class UFishCLI():
         else:
             plt.show()
 
+    def plot_2d_evals(
+            self,
+            pred_dir: str,
+            true_dir: str,
+            image_dir: str,
+            output_dir: str,
+            pred_glob: str = '*.pred.csv',
+            true_glob: str = '*.csv',
+            image_glob: str = '*.tif',
+            cutoff: float = 3.0,
+            output_suffix: str = '.png',
+            **kwargs
+            ):
+        """Plot the evaluation result for a directory of images."""
+        pred_dir_path = Path(pred_dir)
+        true_dir_path = Path(true_dir)
+        image_dir_path = Path(image_dir)
+        output_dir_path = Path(output_dir)
+        output_dir_path.mkdir(parents=True, exist_ok=True)
+        pred_csvs = list(pred_dir_path.glob(pred_glob))
+        true_csvs = list(true_dir_path.glob(true_glob))
+        image_paths = list(image_dir_path.glob(image_glob))
+        common_names = set([p.name.split('.')[0] for p in pred_csvs]) & \
+            set([p.name.split('.')[0] for p in true_csvs]) & \
+            set([p.name.split('.')[0] for p in image_paths])
+        logger.info(f'Plotting {len(common_names)} images')
+        for idx, name in enumerate(common_names):
+            logger.info(f'Plotting ({idx+1}/{len(common_names)}) {name}')
+            pred_csv_path = pred_dir_path / (name + '.pred.csv')
+            true_csv_path = true_dir_path / (name + '.csv')
+            image_path = image_dir_path / (name + '.tif')
+            output_path = output_dir_path / (name + output_suffix)
+            try:
+                self.plot_2d_eval(
+                    str(image_path),
+                    str(pred_csv_path),
+                    str(true_csv_path),
+                    cutoff=cutoff,
+                    fig_save_path=str(output_path),
+                    **kwargs
+                )
+            except Exception as e:
+                logger.error(f'Error plotting {name}: {e}')
+
+    def evaluate_imgs(
+            self,
+            pred_dir: str,
+            true_dir: str,
+            output_table_path: str,
+            pred_glob: str = '*.pred.csv',
+            true_glob: str = '*.csv',
+            ):
+        """Evaluate the predicted spots.
+
+        Args:
+            pred_dir: Path to the directory containing the predicted spots.
+            true_dir: Path to the directory containing the true spots.
+            output_table_path: Path to the output table.
+            pred_glob: The glob pattern for the predicted spots.
+            true_glob: The glob pattern for the true spots.
+        """
+        import pandas as pd
+        pred_dir_path = Path(pred_dir)
+        true_dir_path = Path(true_dir)
+        pred_csvs = list(pred_dir_path.glob(pred_glob))
+        true_csvs = list(true_dir_path.glob(true_glob))
+        common_names = set([p.name.split('.')[0] for p in pred_csvs]) & \
+            set([p.name.split('.')[0] for p in true_csvs])
+        logger.info(f'Evaluating {len(common_names)} images')
+        out = {
+            'true_csv': [],
+            'pred_csv': [],
+            'f1 - cutoff=3': [],
+            'f1 integral': [],
+            'mean distance': [],
+            'pred num': [],
+            'true num': [],
+        }
+        for idx, name in enumerate(common_names):
+            pred_csv_path = pred_dir_path / (name + '.pred.csv')
+            true_csv_path = true_dir_path / (name + '.csv')
+            pred_df = pd.read_csv(pred_csv_path)
+            true_df = pd.read_csv(true_csv_path)
+            res = self._ufish.evaluate_result(
+                pred_df, true_df, mdist=3.0)
+            out['true_csv'].append(true_csv_path)
+            out['pred_csv'].append(pred_csv_path)
+            out['f1 - cutoff=3'].append(res['f1_score'].iloc[-1])
+            out['f1 integral'].append(res['f1_integral'].iloc[0])
+            out['mean distance'].append(res['mean_euclidean'].iloc[0])
+            out['pred num'].append(len(pred_df))
+            out['true num'].append(len(true_df))
+            logger.info(
+                f'Evaluated ({idx+1}/{len(common_names)}) {name}, ' +
+                f'f1 - cutoff=3: {out["f1 - cutoff=3"][-1]:.4f}, ' +
+                f'f1 integral: {out["f1 integral"][-1]:.4f}, ' +
+                f'mean distance: {out["mean distance"][-1]:.4f}, ' +
+                f'pred num: {out["pred num"][-1]}, ' +
+                f'true num: {out["true num"][-1]}'
+            )
+        out_df = pd.DataFrame(out)
+        logger.info(f'Saving results to {output_table_path}')
+        out_df.to_csv(output_table_path, index=False)
+
     def train(
             self,
             train_path: str,
