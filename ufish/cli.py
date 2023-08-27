@@ -312,6 +312,7 @@ class UFishCLI():
             pred_dir: str,
             true_dir: str,
             output_table_path: str,
+            f1_only: bool = False,
             pred_glob: str = '*.pred.csv',
             true_glob: str = '*.csv',
             ):
@@ -321,6 +322,7 @@ class UFishCLI():
             pred_dir: Path to the directory containing the predicted spots.
             true_dir: Path to the directory containing the true spots.
             output_table_path: Path to the output table.
+            f1_only: If True, only calculate the f1 score.
             pred_glob: The glob pattern for the predicted spots.
             true_glob: The glob pattern for the true spots.
         """
@@ -335,34 +337,49 @@ class UFishCLI():
         out = {
             'true_csv': [],
             'pred_csv': [],
+            'source': [],
             'f1 - cutoff=3': [],
-            'f1 integral': [],
-            'mean distance': [],
             'pred num': [],
             'true num': [],
         }
+        if not f1_only:
+            out['f1 integral'] = []
+            out['mean distance'] = []
         for idx, name in enumerate(common_names):
             pred_csv_path = pred_dir_path / (name + '.pred.csv')
             true_csv_path = true_dir_path / (name + '.csv')
             pred_df = pd.read_csv(pred_csv_path)
             true_df = pd.read_csv(true_csv_path)
-            res = self._ufish.evaluate_result(
-                pred_df, true_df, mdist=3.0)
+            source = name.split("_")[0]
             out['true_csv'].append(true_csv_path)
             out['pred_csv'].append(pred_csv_path)
-            out['f1 - cutoff=3'].append(res['f1_score'].iloc[-1])
-            out['f1 integral'].append(res['f1_integral'].iloc[0])
-            out['mean distance'].append(res['mean_euclidean'].iloc[0])
+            out['source'].append(source)
             out['pred num'].append(len(pred_df))
             out['true num'].append(len(true_df))
-            logger.info(
-                f'Evaluated ({idx+1}/{len(common_names)}) {name}, ' +
-                f'f1 - cutoff=3: {out["f1 - cutoff=3"][-1]:.4f}, ' +
-                f'f1 integral: {out["f1 integral"][-1]:.4f}, ' +
-                f'mean distance: {out["mean distance"][-1]:.4f}, ' +
-                f'pred num: {out["pred num"][-1]}, ' +
-                f'true num: {out["true num"][-1]}'
-            )
+            if f1_only:
+                res = self._ufish.calculate_f1_score(
+                    pred_df, true_df, cutoff=3.0)
+                out['f1 - cutoff=3'].append(res)
+                logger.info(
+                    f'Evaluated ({idx+1}/{len(common_names)}) {name}, ' +
+                    f'f1 - cutoff=3: {out["f1 - cutoff=3"][-1]:.4f}, ' +
+                    f'pred num: {out["pred num"][-1]}, ' +
+                    f'true num: {out["true num"][-1]}'
+                )
+            else:
+                res = self._ufish.evaluate_result(
+                    pred_df, true_df, mdist=3.0)
+                out['f1 - cutoff=3'].append(res['f1_score'].iloc[-1])
+                out['f1 integral'].append(res['f1_integral'].iloc[0])
+                out['mean distance'].append(res['mean_euclidean'].iloc[0])
+                logger.info(
+                    f'Evaluated ({idx+1}/{len(common_names)}) {name}, ' +
+                    f'f1 - cutoff=3: {out["f1 - cutoff=3"][-1]:.4f}, ' +
+                    f'f1 integral: {out["f1 integral"][-1]:.4f}, ' +
+                    f'mean distance: {out["mean distance"][-1]:.4f}, ' +
+                    f'pred num: {out["pred num"][-1]}, ' +
+                    f'true num: {out["true num"][-1]}'
+                )
         out_df = pd.DataFrame(out)
         logger.info(f'Saving results to {output_table_path}')
         out_df.to_csv(output_table_path, index=False)

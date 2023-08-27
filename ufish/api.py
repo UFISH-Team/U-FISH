@@ -262,6 +262,33 @@ class UFish():
             pred, true, mdist=mdist)
         return metrics
 
+    def calculate_f1_score(
+            self,
+            pred: pd.DataFrame,
+            true: pd.DataFrame,
+            cutoff: float = 3.0,
+            ) -> float:
+        """Calculate the F1 score of the prediction result.
+
+        Args:
+            pred: The predicted spots.
+            true: The true spots.
+            cutoff: The maximum distance to consider a spot as a true positive.
+        """
+        from .utils.metrics import f1_at_cutoff
+        from scipy.spatial.distance import cdist
+        if pred.shape[0] == 0 and true.shape[0] == 0:
+            return 1.0
+        if pred.shape[0] == 0 or true.shape[0] == 0:
+            return 0.0
+        matrix = cdist(pred.values, true.values)
+        f1 = f1_at_cutoff(
+            matrix,
+            pred.values,
+            true.values,
+            cutoff=cutoff)
+        return f1
+
     def plot_result(
             self,
             img: np.ndarray,
