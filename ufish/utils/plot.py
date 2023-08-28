@@ -6,8 +6,6 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from .metrics import f1_at_cutoff
-
 
 class Plot2d(object):
     def __init__(self):
@@ -92,6 +90,7 @@ class Plot2d(object):
             legend: whether to show legend
             **kwargs: keyword arguments passed to ax.scatter
         """
+        from .metrics_deepblink import f1_at_cutoff
         if ax is None:
             ax = self.ax
         tp_marker = tp_marker or self.default_marker_style

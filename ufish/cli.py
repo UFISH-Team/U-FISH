@@ -312,7 +312,7 @@ class UFishCLI():
             pred_dir: str,
             true_dir: str,
             output_table_path: str,
-            f1_only: bool = False,
+            deepblink_metric: bool = False,
             pred_glob: str = '*.pred.csv',
             true_glob: str = '*.csv',
             ):
@@ -322,7 +322,7 @@ class UFishCLI():
             pred_dir: Path to the directory containing the predicted spots.
             true_dir: Path to the directory containing the true spots.
             output_table_path: Path to the output table.
-            f1_only: If True, only calculate the f1 score.
+            deepblink_metric: Whether to use the DeepBlink metric.
             pred_glob: The glob pattern for the predicted spots.
             true_glob: The glob pattern for the true spots.
         """
@@ -338,13 +338,19 @@ class UFishCLI():
             'true_csv': [],
             'pred_csv': [],
             'source': [],
-            'f1 - cutoff=3': [],
+            'f1(cutoff=3)': [],
             'pred num': [],
             'true num': [],
+            'mean distance': [],
         }
-        if not f1_only:
+        if deepblink_metric:
             out['f1 integral'] = []
-            out['mean distance'] = []
+        else:
+            out['true positive'] = []
+            out['false negative'] = []
+            out['false positive'] = []
+            out['recall'] = []
+            out['precision'] = []
         for idx, name in enumerate(common_names):
             pred_csv_path = pred_dir_path / (name + '.pred.csv')
             true_csv_path = true_dir_path / (name + '.csv')
@@ -356,25 +362,37 @@ class UFishCLI():
             out['source'].append(source)
             out['pred num'].append(len(pred_df))
             out['true num'].append(len(true_df))
-            if f1_only:
-                res = self._ufish.calculate_f1_score(
+            if not deepblink_metric:
+                res = self._ufish.evaluate_result(
                     pred_df, true_df, cutoff=3.0)
-                out['f1 - cutoff=3'].append(res)
+                out['f1(cutoff=3)'].append(res['f1'])
+                out['true positive'].append(res['true_positive'])
+                out['false negative'].append(res['false_negative'])
+                out['false positive'].append(res['false_positive'])
+                out['recall'].append(res['recall'])
+                out['precision'].append(res['precision'])
+                out['mean distance'].append(res['mean_dist'])
                 logger.info(
                     f'Evaluated ({idx+1}/{len(common_names)}) {name}, ' +
-                    f'f1 - cutoff=3: {out["f1 - cutoff=3"][-1]:.4f}, ' +
+                    f'f1(cutoff=3): {out["f1(cutoff=3)"][-1]:.4f}, ' +
                     f'pred num: {out["pred num"][-1]}, ' +
-                    f'true num: {out["true num"][-1]}'
+                    f'true num: {out["true num"][-1]}, ' +
+                    f'true positive: {out["true positive"][-1]}, ' +
+                    f'false negative: {out["false negative"][-1]}, ' +
+                    f'false positive: {out["false positive"][-1]}, ' +
+                    f'recall: {out["recall"][-1]:.4f}, ' +
+                    f'precision: {out["precision"][-1]:.4f}, ' +
+                    f'mean distance: {out["mean distance"][-1]:.4f}'
                 )
             else:
-                res = self._ufish.evaluate_result(
+                res = self._ufish.evaluate_result_dp(
                     pred_df, true_df, mdist=3.0)
-                out['f1 - cutoff=3'].append(res['f1_score'].iloc[-1])
+                out['f1(cutoff=3)'].append(res['f1_score'].iloc[-1])
                 out['f1 integral'].append(res['f1_integral'].iloc[0])
                 out['mean distance'].append(res['mean_euclidean'].iloc[0])
                 logger.info(
                     f'Evaluated ({idx+1}/{len(common_names)}) {name}, ' +
-                    f'f1 - cutoff=3: {out["f1 - cutoff=3"][-1]:.4f}, ' +
+                    f'f1(cutoff=3): {out["f1(cutoff=3)"][-1]:.4f}, ' +
                     f'f1 integral: {out["f1 integral"][-1]:.4f}, ' +
                     f'mean distance: {out["mean distance"][-1]:.4f}, ' +
                     f'pred num: {out["pred num"][-1]}, ' +

@@ -13,7 +13,7 @@ The underlying concept of our method, U-FISH, acknowledges the significant varia
   + [x] Training
 - [x] CLI
   + [x] Inference
-  + [ ] Evaluation
+  + [x] Evaluation
   + [x] Plotting tool for show TP, FP, FN
   + [x] Training
 - [ ] Napari plugin
@@ -110,6 +110,9 @@ $ ufish train path/to/train_dir path/to/val_dir --model_save_path path/to/save/m
 
 # training from a pre-trained model (fine-tuning)
 $ ufish load_weights path/to/weights - train path/to/train_dir path/to/val_dir --model_save_path path/to/save/model
+
+# evaluate prediction results in a directory
+$ ufish evaluate_imgs path/to/pred_dir path/to/true_dir output.csv
 ```
 
 ## Dataset

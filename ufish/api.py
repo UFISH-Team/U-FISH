@@ -238,13 +238,13 @@ class UFish():
         else:
             return df
 
-    def evaluate_result(
+    def evaluate_result_dp(
             self,
             pred: pd.DataFrame,
             true: pd.DataFrame,
             mdist: float = 3.0,
             ) -> pd.DataFrame:
-        """Evaluate the prediction result.
+        """Evaluate the prediction result using deepblink metrics.
 
         Args:
             pred: The predicted spots.
@@ -253,7 +253,7 @@ class UFish():
 
         Returns:
             A pandas dataframe containing the evaluation metrics."""
-        from .utils.metrics import compute_metrics
+        from .utils.metrics_deepblink import compute_metrics
         axis_names = list(pred.columns)
         axis_cols = [n for n in axis_names if n.startswith('axis')]
         pred = pred[axis_cols].values
@@ -262,7 +262,7 @@ class UFish():
             pred, true, mdist=mdist)
         return metrics
 
-    def calculate_f1_score(
+    def evaluate_result(
             self,
             pred: pd.DataFrame,
             true: pd.DataFrame,
@@ -275,19 +275,9 @@ class UFish():
             true: The true spots.
             cutoff: The maximum distance to consider a spot as a true positive.
         """
-        from .utils.metrics import f1_at_cutoff
-        from scipy.spatial.distance import cdist
-        if pred.shape[0] == 0 and true.shape[0] == 0:
-            return 1.0
-        if pred.shape[0] == 0 or true.shape[0] == 0:
-            return 0.0
-        matrix = cdist(pred.values, true.values)
-        f1 = f1_at_cutoff(
-            matrix,
-            pred.values,
-            true.values,
-            cutoff=cutoff)
-        return f1
+        from .utils.metrics import compute_metrics
+        res = compute_metrics(pred.values, true.values, cutoff=cutoff)
+        return res
 
     def plot_result(
             self,
