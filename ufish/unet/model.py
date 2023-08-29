@@ -113,30 +113,27 @@ class CBAM(nn.Module):
 class UNet(nn.Module):
     def __init__(
             self, in_channels=1, out_channels=1,
-            num_layers=4, base_channels=64):
+            depth=3, base_channels=64):
         super(UNet, self).__init__()
 
         self.encoders = nn.ModuleList()
         self.downsamples = nn.ModuleList()
-        for i in range(num_layers):
+        for i in range(depth):
             input_channels = (
-                in_channels if i == 0 else base_channels * 2 ** (i - 1)
+                in_channels if i == 0 else base_channels
             )
-            output_channels = base_channels * 2 ** i
+            output_channels = base_channels
             self.encoders.append(ConvBlock(input_channels, output_channels))
             self.downsamples.append(DownConv(output_channels, output_channels))
 
-        self.bottom = ConvBlock(
-            base_channels * 2 ** (num_layers - 1),
-            base_channels * 2 ** (num_layers)
-        )
+        self.bottom = ConvBlock(base_channels, base_channels)
 
         self.decoders = nn.ModuleList()
         self.upsamples = nn.ModuleList()
         self.cbams = nn.ModuleList()
-        for i in range(num_layers, 0, -1):
-            input_channels = base_channels * 2 ** i
-            output_channels = base_channels * 2 ** (i - 1)
+        for i in range(depth, 0, -1):
+            input_channels = base_channels
+            output_channels = base_channels
             self.decoders.append(ConvBlock(input_channels, output_channels))
             self.upsamples.append(UpConv(input_channels, output_channels))
             self.cbams.append(CBAM(output_channels))
