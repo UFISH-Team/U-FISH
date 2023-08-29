@@ -134,7 +134,7 @@ class UNet(nn.Module):
         for i in range(depth, 0, -1):
             input_channels = base_channels
             output_channels = base_channels
-            self.decoders.append(ConvBlock(input_channels, output_channels))
+            self.decoders.append(ConvBlock(2*input_channels, output_channels))
             self.upsamples.append(UpConv(input_channels, output_channels))
             self.cbams.append(CBAM(output_channels))
 
