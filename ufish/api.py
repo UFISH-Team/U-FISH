@@ -36,10 +36,20 @@ class UFish():
         self.local_store_path = Path(
             os.path.expanduser(local_store_path))
 
-    def _init_model(self) -> None:
+    def init_model(self, depth=3, base_channels=64) -> None:
+        """Initialize the U-Net model.
+
+        Args:
+            depth: The depth of the U-Net.
+            base_channels: The number of base channels.
+        """
         import torch
         from .unet.model import UNet
-        self.model = UNet()
+        self.model = UNet(depth=depth, base_channels=base_channels)
+        params = sum(p.numel() for p in self.model.parameters())
+        logger.info(f'Initializing model with depth={depth}, '
+                    f'base_channels={base_channels}')
+        logger.info(f'Number of parameters: {params}')
         self.cuda = False
         if self._cuda:
             if torch.cuda.is_available():
@@ -69,7 +79,8 @@ class UFish():
         Args:
             weights_path: The path to the weights file."""
         import torch
-        self._init_model()
+        if self.model is None:
+            self.init_model()
         assert self.model is not None
         weights_path = str(weights_path)
         logger.info(f'Loading weights from {weights_path}')
@@ -411,7 +422,7 @@ class UFish():
             data_argu: bool = False,
             num_epochs: int = 50,
             batch_size: int = 8,
-            lr: float = 1e-4,
+            lr: float = 1e-3,
             summary_dir: str = "runs/unet",
             model_save_path: str = "best_unet_model.pth",
             only_save_best: bool = True,
@@ -443,7 +454,7 @@ class UFish():
         from .unet.data import FISHSpotsDataset
         if self.model is None:
             logger.info('Model is not initialized. Will initialize a new one.')
-            self._init_model()
+            self.init_model()
         assert self.model is not None
 
         if data_argu:

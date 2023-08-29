@@ -31,6 +31,23 @@ class UFishCLI():
         )
         return self
 
+    def init_model(
+            self,
+            depth: int = 3,
+            base_channels: int = 64,
+            ):
+        """Initialize the U-Net model.
+
+        Args:
+            depth: The depth of the U-Net.
+            base_channels: The number of base channels.
+        """
+        self._ufish.init_model(
+            depth=depth,
+            base_channels=base_channels,
+        )
+        return self
+
     def load_weights(
             self,
             weights_path: T.Optional[str] = None,
@@ -426,7 +443,7 @@ class UFishCLI():
             data_argu: bool = False,
             num_epochs: int = 50,
             batch_size: int = 8,
-            lr: float = 1e-4,
+            lr: float = 1e-3,
             summary_dir: str = "runs/unet",
             model_save_path: str = "best_unet_model.pth",
             only_save_best: bool = True,
