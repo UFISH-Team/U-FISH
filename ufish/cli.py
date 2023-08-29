@@ -94,7 +94,7 @@ class UFishCLI():
         img = imread(enhanced_img_path)
         logger.info(f'Calling spots in {enhanced_img_path}')
         logger.info(
-            f'Parameters: binary_threshold={binary_threshold}, ',
+            f'Parameters: binary_threshold={binary_threshold}, ' +
             f'cc_size_thresh={cc_size_thresh}')
         pred_df = self._ufish.call_spots_cc_center(
             img,
@@ -122,7 +122,7 @@ class UFishCLI():
         img = imread(enhanced_img_path)
         logger.info(f'Calling spots in {enhanced_img_path}')
         logger.info(
-            f'Parameters: connectivity={connectivity}, ',
+            f'Parameters: connectivity={connectivity}, ' +
             f'intensity_threshold={intensity_threshold}')
         pred_df = self._ufish.call_spots_local_maxima(
             img,
@@ -209,13 +209,24 @@ class UFishCLI():
             input_prefix = splitext(in_path.name)[0]
             output_path = out_dir_path / (input_prefix + '.pred.csv')
             enhanced_img_path = out_dir_path / (input_prefix + '.enhanced.tif')
-            self.pred_2d_img(
-                str(in_path),
-                str(output_path),
-                str(enhanced_img_path) if save_enhanced_img else None,
-                connectivity=connectivity,
-                intensity_threshold=intensity_threshold,
-            )
+            if enhanced_img_path.exists():
+                logger.info(
+                    f'Enhanced image {enhanced_img_path} exists, ' +
+                    'skipping enhancement.')
+                self.call_spots_local_maxima(
+                    str(enhanced_img_path),
+                    str(output_path),
+                    connectivity=connectivity,
+                    intensity_threshold=intensity_threshold,
+                )
+            else:
+                self.pred_2d_img(
+                    str(in_path),
+                    str(output_path),
+                    str(enhanced_img_path) if save_enhanced_img else None,
+                    connectivity=connectivity,
+                    intensity_threshold=intensity_threshold,
+                )
 
     def plot_2d_pred(
             self,
@@ -399,6 +410,8 @@ class UFishCLI():
                     f'true num: {out["true num"][-1]}'
                 )
         out_df = pd.DataFrame(out)
+        mean_f1 = out_df['f1(cutoff=3)'].mean()
+        logger.info(f'Mean f1(cutoff=3): {mean_f1:.4f}')
         logger.info(f'Saving results to {output_table_path}')
         out_df.to_csv(output_table_path, index=False)
 
