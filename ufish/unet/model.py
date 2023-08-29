@@ -3,33 +3,23 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class ConvBlock(nn.Module):
-    def __init__(self, in_channels, out_channels):
-        super(ConvBlock, self).__init__()
-        self.conv1 = nn.Conv2d(
-            in_channels, out_channels, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(
-            out_channels, out_channels, kernel_size=3, padding=1)
-
-    def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        return x
-
-
 class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(ResidualBlock, self).__init__()
-        self.conv = nn.Conv2d(
-            in_channels, out_channels, kernel_size=3, padding=1)
-        self.BN = nn.BatchNorm2d(out_channels)
-        self.relu = nn.ReLU(inplace=True)
+        self.conv1 = nn.Conv2d(
+            in_channels, out_channels, kernel_size=1, padding=0)
+        self.conv2 = nn.Conv2d(
+            out_channels, out_channels, kernel_size=3, padding=1)
+        self.BN1 = nn.BatchNorm2d(out_channels)
+        self.BN2 = nn.BatchNorm2d(out_channels)
 
     def forward(self, x):
-        out = self.conv(x)
-        out = self.BN(out)
-        out = self.relu(out)
-        out = x + out
+        out = self.conv1(x)
+        out = self.BN1(out)
+        out = F.relu(out, inplace=True)
+        out = self.conv2(out)
+        out = self.BN2(out)
+        out += x
         return out
 
 
@@ -37,8 +27,8 @@ class DownConv(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(DownConv, self).__init__()
         self.conv = nn.Conv2d(
-            in_channels, out_channels, kernel_size=3, stride=2, padding=1)
-        self.resconv = ResidualBlock(out_channels, out_channels)
+            in_channels, in_channels, kernel_size=3, stride=2, padding=1)
+        self.resconv = ResidualBlock(in_channels, out_channels)
 
     def forward(self, x):
         out = self.conv(x)
@@ -49,12 +39,11 @@ class DownConv(nn.Module):
 class UpConv(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(UpConv, self).__init__()
-        self.upconv = nn.Conv2d(
-            in_channels, out_channels, kernel_size=3, stride=1, padding=1)
+        self.resconv = ResidualBlock(in_channels, out_channels)
 
     def forward(self, x):
         up = F.interpolate(x, scale_factor=2, mode='nearest')
-        out = self.upconv(up)
+        out = self.resconv(up)
         return out
 
 
@@ -123,10 +112,11 @@ class UNet(nn.Module):
                 in_channels if i == 0 else base_channels
             )
             output_channels = base_channels
-            self.encoders.append(ConvBlock(input_channels, output_channels))
+            self.encoders.append(
+                ResidualBlock(input_channels, output_channels))
             self.downsamples.append(DownConv(output_channels, output_channels))
 
-        self.bottom = ConvBlock(base_channels, base_channels)
+        self.bottom = ResidualBlock(base_channels, base_channels)
 
         self.decoders = nn.ModuleList()
         self.upsamples = nn.ModuleList()
@@ -134,11 +124,12 @@ class UNet(nn.Module):
         for i in range(depth, 0, -1):
             input_channels = base_channels
             output_channels = base_channels
-            self.decoders.append(ConvBlock(2*input_channels, output_channels))
+            self.decoders.append(
+                ResidualBlock(2*input_channels, output_channels))
             self.upsamples.append(UpConv(input_channels, output_channels))
             self.cbams.append(CBAM(output_channels))
 
-        self.final_decoder = ConvBlock(base_channels, out_channels)
+        self.final_decoder = ResidualBlock(base_channels, out_channels)
 
     def forward(self, x):
         encodings = []
