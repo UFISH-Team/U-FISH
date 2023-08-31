@@ -36,18 +36,26 @@ class UFish():
         self.local_store_path = Path(
             os.path.expanduser(local_store_path))
 
-    def init_model(self, depth=3, base_channels=64) -> None:
-        """Initialize the U-Net model.
+    def init_model(
+            self,
+            model_type: str = 'unet',
+            depth=3, base_channels=32) -> None:
+        """Initialize the model.
 
         Args:
-            depth: The depth of the U-Net.
+            model_type: The type of the model. 'unet' or 'fcn'.
+            depth: The depth of the network.
             base_channels: The number of base channels.
         """
         import torch
-        from .model.network import UNet
-        self.model = UNet(depth=depth, base_channels=base_channels)
+        if model_type == 'unet':
+            from .model.network import UNet
+            self.model = UNet(depth=depth, base_channels=base_channels)
+        else:
+            from .model.network import FCN
+            self.model = FCN(depth=depth, base_channels=base_channels)
         params = sum(p.numel() for p in self.model.parameters())
-        logger.info(f'Initializing model with depth={depth}, '
+        logger.info(f'Initializing {model_type} model with depth={depth}, '
                     f'base_channels={base_channels}')
         logger.info(f'Number of parameters: {params}')
         self.cuda = False

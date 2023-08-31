@@ -38,6 +38,39 @@ class ResidualBlock(nn.Module):
         return out
 
 
+class MobileBlock(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.conv1 = nn.Conv2d(
+            in_channels, in_channels, kernel_size=3,
+            padding=1, groups=in_channels)
+        self.conv2 = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+        self.BN1 = nn.BatchNorm2d(in_channels)
+        self.BN2 = nn.BatchNorm2d(out_channels)
+
+    def forward(self, x):
+        out = self.conv1(x)
+        out = self.BN1(out)
+        out = F.relu(out)
+        out = self.conv2(out)
+        out = self.BN2(out)
+        out = F.relu(out)
+        return out
+
+
+class MobileResBlock(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.conv1 = MobileBlock(in_channels, out_channels)
+        self.conv2 = MobileBlock(out_channels, out_channels)
+
+    def forward(self, x):
+        out = self.conv1(x)
+        out = self.conv2(out)
+        out = out + x
+        return out
+
+
 class DownConv(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(DownConv, self).__init__()
@@ -115,7 +148,10 @@ class CBAM(nn.Module):
 class EncoderBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(EncoderBlock, self).__init__()
-        self.conv = ConvBlock(in_channels, out_channels)
+        self.conv = nn.Sequential(
+            MobileBlock(in_channels, out_channels),
+            MobileBlock(out_channels, out_channels)
+        )
 
     def forward(self, x):
         out = self.conv(x)
@@ -125,7 +161,10 @@ class EncoderBlock(nn.Module):
 class DecoderBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(DecoderBlock, self).__init__()
-        self.conv = ConvBlock(in_channels, out_channels)
+        self.conv = nn.Sequential(
+            MobileBlock(in_channels, out_channels),
+            MobileBlock(out_channels, out_channels)
+        )
 
     def forward(self, x):
         out = self.conv(x)
@@ -135,9 +174,9 @@ class DecoderBlock(nn.Module):
 class BottoleneckBlock(nn.Module):
     def __init__(self, channels):
         super(BottoleneckBlock, self).__init__()
-        self.conv1 = ResidualBlock(channels)
+        self.conv1 = MobileResBlock(channels, channels)
         self.cbam = CBAM(channels)
-        self.conv2 = ResidualBlock(channels)
+        self.conv2 = MobileResBlock(channels, channels)
 
     def forward(self, x):
         out = self.conv1(x)
@@ -195,4 +234,30 @@ class UNet(nn.Module):
             x = decoder(x)
 
         x = self.final_decoder(x)
+        return x
+
+
+class FCN(nn.Module):
+    """Single level fully convolutional network."""
+    def __init__(
+            self,
+            in_channels: int = 1,
+            out_channels: int = 1,
+            depth: int = 10,
+            base_channels: int = 32,
+            ):
+        super().__init__()
+        self.layers = nn.ModuleList()
+        for i in range(depth):
+            if i == 0:
+                self.layers.append(MobileBlock(in_channels, base_channels))
+            elif i == (depth - 1):
+                self.layers.append(MobileBlock(base_channels, out_channels))
+            else:
+                self.layers.append(
+                    MobileResBlock(base_channels, base_channels))
+
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
         return x

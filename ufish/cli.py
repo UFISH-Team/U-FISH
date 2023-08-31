@@ -33,16 +33,19 @@ class UFishCLI():
 
     def init_model(
             self,
+            model_type: str = 'unet',
             depth: int = 3,
             base_channels: int = 64,
             ):
-        """Initialize the U-Net model.
+        """Initialize the model.
 
         Args:
-            depth: The depth of the U-Net.
+            model_type: The type of the model. 'unet' or 'fcn'.
+            depth: The depth of the network.
             base_channels: The number of base channels.
         """
         self._ufish.init_model(
+            model_type=model_type,
             depth=depth,
             base_channels=base_channels,
         )
