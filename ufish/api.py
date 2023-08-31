@@ -9,7 +9,7 @@ import pandas as pd
 from .utils.log import logger
 
 if T.TYPE_CHECKING:
-    from .unet.model import UNet
+    from torch import nn
     from matplotlib.figure import Figure
 
 
@@ -30,7 +30,7 @@ class UFish():
         """
         self._cuda = cuda
         self._infer_mode = False
-        self.model: T.Optional["UNet"] = None
+        self.model: T.Optional["nn.Module"] = None
         self.default_weights_file = default_weights_file
         self.store_base_url = BASE_STORE_URL
         self.local_store_path = Path(
@@ -44,7 +44,7 @@ class UFish():
             base_channels: The number of base channels.
         """
         import torch
-        from .unet.model import UNet
+        from .model.network import UNet
         self.model = UNet(depth=depth, base_channels=base_channels)
         params = sum(p.numel() for p in self.model.parameters())
         logger.info(f'Initializing model with depth={depth}, '
@@ -385,7 +385,7 @@ class UFish():
             transform=None,
             ):
         """Load a dataset from a path."""
-        from .unet.data import FISHSpotsDataset
+        from .data import FISHSpotsDataset
         _path = Path(path)
         if _path.is_dir():
             if root_dir_path is not None:
@@ -450,8 +450,8 @@ class UFish():
             model_save_path: The path to save the best model to.
             only_save_best: Whether to only save the best model.
         """
-        from .unet.train import train_on_dataset
-        from .unet.data import FISHSpotsDataset
+        from .model.train import train_on_dataset
+        from .data import FISHSpotsDataset
         if self.model is None:
             logger.info('Model is not initialized. Will initialize a new one.')
             self.init_model()
@@ -459,7 +459,7 @@ class UFish():
 
         if data_argu:
             logger.info('Using data augmentation.')
-            from .unet.data import composed_transform
+            from .data import composed_transform
             transform = composed_transform
         else:
             transform = None

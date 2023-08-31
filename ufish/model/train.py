@@ -6,8 +6,8 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 from torch import Tensor
 
-from .utils import DiceLoss, RMSELoss
-from .data import FISHSpotsDataset
+from .loss import DiceLoss, RMSELoss
+from ..data import FISHSpotsDataset
 from ..utils.log import logger
 
 

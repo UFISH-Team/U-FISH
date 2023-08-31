@@ -13,8 +13,8 @@ from skimage.io import imread
 from skimage.morphology import dilation
 import skimage.morphology as morphology  # noqa: F401
 
-from ..utils.misc import scale_image
-from ..utils.log import logger
+from .utils.misc import scale_image
+from .utils.log import logger
 
 
 class Reader:

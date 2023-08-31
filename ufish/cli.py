@@ -222,7 +222,8 @@ class UFishCLI():
         out_dir_path.mkdir(parents=True, exist_ok=True)
         logger.info(f'Predicting images in {input_path}')
         logger.info(f'Saving results to {out_dir_path}')
-        for in_path in input_imgs:
+        for i, in_path in enumerate(input_imgs):
+            logger.info(f'({i+1}/{len(input_imgs)}) Predicting {in_path}')
             input_prefix = splitext(in_path.name)[0]
             output_path = out_dir_path / (input_prefix + '.pred.csv')
             enhanced_img_path = out_dir_path / (input_prefix + '.enhanced.tif')
