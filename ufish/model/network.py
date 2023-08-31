@@ -135,9 +135,9 @@ class DecoderBlock(nn.Module):
 class BottoleneckBlock(nn.Module):
     def __init__(self, channels):
         super(BottoleneckBlock, self).__init__()
-        self.conv1 = ResidualBlock(channels, channels)
+        self.conv1 = ResidualBlock(channels)
         self.cbam = CBAM(channels)
-        self.conv2 = ResidualBlock(channels, channels)
+        self.conv2 = ResidualBlock(channels)
 
     def forward(self, x):
         out = self.conv1(x)
@@ -213,7 +213,7 @@ class FCN(nn.Module):
             if i == 0:
                 self.layers.append(ConvBlock(in_channels, base_channels))
             elif i == (depth - 1):
-                self.layers.append(ResidualBlock(base_channels, out_channels))
+                self.layers.append(ResidualBlock(base_channels))
             else:
                 self.layers.append(ConvBlock(base_channels, base_channels))
 
