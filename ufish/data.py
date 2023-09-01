@@ -209,31 +209,96 @@ class FISHSpotsDataset(Dataset):
         return cls(reader, process_func, transform)
 
 
-class RandomHorizontalFlip:
+class RandomFlip:
     def __init__(self, p=0.5):
         self.p = p
 
     def __call__(self, sample):
         image, target = sample['image'], sample['target']
         if random.random() < self.p:
-            image = np.flip(image, axis=2)
-            target = np.flip(target, axis=2)
+            image = np.flip(image, axis=2).copy()
+            target = np.flip(target, axis=2).copy()
+        if random.random() < self.p:
+            image = np.flip(image, axis=1).copy()
+            target = np.flip(target, axis=1).copy()
         return {'image': image, 'target': target}
 
 
 class RandomRotation:
-    def __init__(self, angle_range=(-15, 15)):
+    def __init__(self, p=0.5, angle_range=(-90, 90)):
+        self.p = p
         self.angle_range = angle_range
 
     def __call__(self, sample):
-        angle = random.uniform(self.angle_range[0], self.angle_range[1])
+        if random.random() > self.p:
+            return sample
         image, target = sample['image'], sample['target']
+        angle = random.uniform(self.angle_range[0], self.angle_range[1])
         image = ndi.rotate(
             image, angle, axes=(1, 2),
             mode='reflect', order=1, reshape=False)
         target = ndi.rotate(
             target, angle, axes=(1, 2),
             mode='reflect', order=1, reshape=False)
+        return {'image': image, 'target': target}
+
+
+class RandomTranslation:
+    def __init__(self, p=0.5, shift_range=(-5, 5)):
+        self.p = p
+        self.shift_range = shift_range
+
+    def __call__(self, sample):
+        if random.random() > self.p:
+            return sample
+        image, target = sample['image'], sample['target']
+        shift = random.uniform(self.shift_range[0], self.shift_range[1])
+        image = ndi.shift(
+            image, shift, mode='reflect', order=1)
+        target = ndi.shift(
+            target, shift, mode='reflect', order=1)
+        return {'image': image, 'target': target}
+
+
+class GaussianNoise:
+    def __init__(self, p=0.5, sigma_range=(0, 0.5)):
+        self.p = p
+        self.sigma_range = sigma_range
+
+    def __call__(self, sample):
+        if random.random() > self.p:
+            return sample
+        image, target = sample['image'], sample['target']
+        sigma = random.uniform(self.sigma_range[0], self.sigma_range[1])
+        noise = np.random.normal(
+            0, sigma, image.shape).astype(np.float32)
+        image += noise
+        image = np.clip(image, 0, 255)
+        return {'image': image, 'target': target}
+
+
+class SaltAndPepperNoise:
+    def __init__(
+            self, p=0.5,
+            salt_range=(0, 0.1),
+            pepper_range=(0, 0.1)):
+        self.p = p
+        self.salt_range = salt_range
+        self.pepper_range = pepper_range
+
+    def __call__(self, sample):
+        if random.random() > self.p:
+            return sample
+        p_salt = random.uniform(
+            self.salt_range[0], self.salt_range[1])
+        p_pepper = random.uniform(
+            self.pepper_range[0], self.pepper_range[1])
+        image, target = sample['image'], sample['target']
+        mask = np.random.choice(
+            [0, 1, 2], size=image.shape,
+            p=[(1-p_salt-p_pepper), p_salt, p_pepper])
+        image[mask == 1] = 0.0
+        image[mask == 2] = 255.0
         return {'image': image, 'target': target}
 
 
@@ -246,7 +311,10 @@ class ToTensorWrapper:
 
 
 composed_transform = Compose([
-    RandomHorizontalFlip(),
+    RandomFlip(),
     RandomRotation(),
+    RandomTranslation(),
+    GaussianNoise(),
+    SaltAndPepperNoise(),
     ToTensorWrapper(),
 ])
