@@ -444,7 +444,9 @@ class UFishCLI():
             img_glob: str = '*.tif',
             coord_glob: str = '*.csv',
             target_process: str = 'gaussian',
+            loader_workers: int = 4,
             data_argu: bool = False,
+            argu_prob: float = 0.5,
             num_epochs: int = 50,
             batch_size: int = 8,
             lr: float = 1e-3,
@@ -466,7 +468,9 @@ class UFishCLI():
             coord_glob: The glob pattern for the coordinate files.
             target_process: The target image processing method.
                 'gaussian' or 'dialation'. default 'gaussian'.
+            loader_workers: The number of workers to use for the data loader.
             data_argu: Whether to use data augmentation.
+            argu_prob: The probability to use data augmentation.
             num_epochs: The number of epochs to train.
             batch_size: The batch size.
             lr: The learning rate.
@@ -480,7 +484,9 @@ class UFishCLI():
             img_glob=img_glob,
             coord_glob=coord_glob,
             target_process=target_process,
+            loader_workers=loader_workers,
             data_argu=data_argu,
+            argu_prob=argu_prob,
             num_epochs=num_epochs,
             batch_size=batch_size,
             lr=lr,

@@ -7,7 +7,6 @@ import pandas as pd
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from torchvision.transforms import Compose
 import scipy.ndimage as ndi
 from skimage.io import imread
 from skimage.morphology import dilation
@@ -310,11 +309,22 @@ class ToTensorWrapper:
         }
 
 
-composed_transform = Compose([
-    RandomFlip(),
-    RandomRotation(),
-    RandomTranslation(),
-    GaussianNoise(),
-    SaltAndPepperNoise(),
-    ToTensorWrapper(),
-])
+class DataAugmentation:
+    def __init__(self, p=0.5, each_transform_p=0.5):
+        self.p = p
+        _p = each_transform_p
+        self.transforms = [
+            RandomFlip(p=_p),
+            RandomRotation(p=_p),
+            RandomTranslation(p=_p),
+            GaussianNoise(p=_p),
+            SaltAndPepperNoise(p=_p),
+        ]
+        self.to_tensor = ToTensorWrapper()
+
+    def __call__(self, sample):
+        if random.random() <= self.p:
+            for transform in self.transforms:
+                sample = transform(sample)
+        sample = self.to_tensor(sample)
+        return sample

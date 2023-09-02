@@ -116,6 +116,7 @@ def train_on_dataset(
         model: torch.nn.Module,
         train_dataset: FISHSpotsDataset,
         valid_dataset: FISHSpotsDataset,
+        loader_workers: int = 4,
         num_epochs: int = 50,
         batch_size: int = 8,
         lr: float = 1e-4,
@@ -129,6 +130,7 @@ def train_on_dataset(
         model: The model to train.
         train_dataset: The training dataset.
         valid_dataset: The validation dataset.
+        loader_workers: The number of workers to use for the data loader.
         num_epochs: The number of epochs to train for.
         batch_size: The batch size.
         lr: The learning rate.
@@ -136,11 +138,13 @@ def train_on_dataset(
         model_save_path: The path to save the best model to.
         only_save_best: Whether to only save the best model.
     """
-
+    logger.info(f"Loader workers: {loader_workers}")
     train_loader = DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+        train_dataset, batch_size=batch_size,
+        shuffle=True, num_workers=loader_workers)
     valid_loader = DataLoader(
-        valid_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+        valid_dataset, batch_size=batch_size,
+        shuffle=False, num_workers=loader_workers)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info(f"Training using device: {device}")

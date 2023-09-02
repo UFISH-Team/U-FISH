@@ -415,8 +415,7 @@ class UFish():
             logger.info(f'Data root directory: {root_dir}')
             dataset = FISHSpotsDataset.from_meta_csv(
                 root_dir=root_dir, meta_csv_path=str(_path),
-                process_func=process_func, transform=transform,
-            )
+                process_func=process_func, transform=transform)
         return dataset
 
     def train(
@@ -427,7 +426,9 @@ class UFish():
             img_glob: str = '*.tif',
             coord_glob: str = '*.csv',
             target_process: str = 'gaussian',
+            loader_workers: int = 4,
             data_argu: bool = False,
+            argu_prob: float = 0.5,
             num_epochs: int = 50,
             batch_size: int = 8,
             lr: float = 1e-3,
@@ -450,7 +451,9 @@ class UFish():
             coord_glob: The glob pattern for the coordinate files.
             target_process: The target image processing method.
                 'gaussian' or 'dialation'. default 'gaussian'.
+            loader_workers: The number of workers to use for the data loader.
             data_argu: Whether to use data augmentation.
+            argu_prob: The probability to use data augmentation.
             num_epochs: The number of epochs to train.
             batch_size: The batch size.
             lr: The learning rate.
@@ -466,9 +469,12 @@ class UFish():
         assert self.model is not None
 
         if data_argu:
-            logger.info('Using data augmentation.')
-            from .data import composed_transform
-            transform = composed_transform
+            logger.info(
+                'Using data augmentation. ' +
+                f'Probability: {argu_prob}'
+            )
+            from .data import DataAugmentation
+            transform = DataAugmentation(p=argu_prob)
         else:
             transform = None
 
@@ -488,7 +494,7 @@ class UFish():
         valid_dataset = self._load_dataset(
             valid_path, root_dir_path=root_dir,
             img_glob=img_glob, coord_glob=coord_glob,
-            process_func=process_func, transform=transform,
+            process_func=process_func,
         )
         logger.info(
             f"Training dataset size: {len(train_dataset)}, "
@@ -502,6 +508,7 @@ class UFish():
         train_on_dataset(
             self.model,
             train_dataset, valid_dataset,
+            loader_workers=loader_workers,
             num_epochs=num_epochs,
             batch_size=batch_size,
             lr=lr,
