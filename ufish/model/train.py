@@ -1,4 +1,5 @@
 import typing as T
+from pathlib import Path
 
 import torch
 import numpy as np
@@ -38,6 +39,8 @@ def training_loop(
         num_epochs: The number of epochs to train for.
     """
     best_val_loss = float("inf")
+    model_dir_path = Path(model_save_dir)
+    model_dir_path.mkdir(parents=True, exist_ok=True)
 
     for epoch in range(num_epochs):
         model.train()
