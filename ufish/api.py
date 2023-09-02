@@ -433,8 +433,8 @@ class UFish():
             batch_size: int = 8,
             lr: float = 1e-3,
             summary_dir: str = "runs/unet",
-            model_save_path: str = "best_unet_model.pth",
-            only_save_best: bool = True,
+            model_save_dir: str = "./models",
+            save_period: int = 5,
             ):
         """Train the U-Net model.
 
@@ -458,8 +458,8 @@ class UFish():
             batch_size: The batch size.
             lr: The learning rate.
             summary_dir: The directory to save the TensorBoard summary to.
-            model_save_path: The path to save the best model to.
-            only_save_best: Whether to only save the best model.
+            model_save_dir: The directory to save the model to.
+            save_period: Save the model every `save_period` epochs.
         """
         from .model.train import train_on_dataset
         from .data import FISHSpotsDataset
@@ -513,6 +513,6 @@ class UFish():
             batch_size=batch_size,
             lr=lr,
             summary_dir=summary_dir,
-            model_save_path=model_save_path,
-            only_save_best=only_save_best,
+            model_save_dir=model_save_dir,
+            save_period=save_period,
         )

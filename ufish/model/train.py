@@ -18,8 +18,8 @@ def training_loop(
         writer: SummaryWriter,
         device: torch.device,
         train_loader: DataLoader, valid_loader: DataLoader,
-        model_save_path: str,
-        only_save_best: bool = True,
+        model_save_dir: str,
+        save_period: int,
         num_epochs=50,
         ):
     """
@@ -33,8 +33,8 @@ def training_loop(
         device: The device to use.
         train_loader: The training data loader.
         valid_loader: The valid data loader.
-        model_save_path: The path to save the model to.
-        only_save_best: Whether to only save the best model.
+        model_save_dir: The directory to save the model to.
+        save_period: Save the model every `save_period` epochs.
         num_epochs: The number of epochs to train for.
     """
     best_val_loss = float("inf")
@@ -100,14 +100,17 @@ def training_loop(
             f"Train Loss: {epoch_loss:.4f}, Val Loss: {val_loss:.4f}"
         )
 
-        if only_save_best:
-            if val_loss < best_val_loss:
-                best_val_loss = val_loss
-                torch.save(model.state_dict(), model_save_path)
-                logger.info(f"Best model saved with Val Loss: {val_loss:.4f}")
-        else:
-            torch.save(model.state_dict(), model_save_path)
-            logger.info(f"Model saved with Val Loss: {val_loss:.4f}")
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            torch.save(
+                model.state_dict(),
+                f"{model_save_dir}/best_model.pth")
+            logger.info(f"Best model saved with Val Loss: {val_loss:.4f}")
+        if epoch % save_period == 0:
+            torch.save(
+                model.state_dict(),
+                f"{model_save_dir}/model_{epoch}.pth")
+            logger.info(f"Model saved at epoch {epoch}.")
 
     writer.close()
 
@@ -121,8 +124,8 @@ def train_on_dataset(
         batch_size: int = 8,
         lr: float = 1e-4,
         summary_dir: str = "runs/unet",
-        model_save_path: str = "best_unet_model.pth",
-        only_save_best: bool = True,
+        model_save_dir: str = "./models",
+        save_period: int = 5,
         ):
     """Train the UNet model.
 
@@ -135,10 +138,17 @@ def train_on_dataset(
         batch_size: The batch size.
         lr: The learning rate.
         summary_dir: The directory to save the TensorBoard summary to.
-        model_save_path: The path to save the best model to.
-        only_save_best: Whether to only save the best model.
+        model_save_dir: The directory to save the model to.
+        save_period: Save the model every `save_period` epochs.
     """
-    logger.info(f"Loader workers: {loader_workers}")
+    logger.info(
+        f"Loader workers: {loader_workers}, " +
+        f"TensorBoard summary dir: {summary_dir}"
+    )
+    logger.info(
+        f"Model save dir: {model_save_dir}, " +
+        f"Save period: {save_period}"
+    )
     train_loader = DataLoader(
         train_dataset, batch_size=batch_size,
         shuffle=True, num_workers=loader_workers)
@@ -161,6 +171,5 @@ def train_on_dataset(
     writer = SummaryWriter(summary_dir)
     training_loop(
         model, optimizer, criterion, writer, device,
-        train_loader, valid_loader, model_save_path,
-        only_save_best,
-        num_epochs)
+        train_loader, valid_loader, model_save_dir,
+        save_period, num_epochs)
