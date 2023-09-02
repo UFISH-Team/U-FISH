@@ -21,14 +21,20 @@ class UFishCLI():
         )
         self._weights_loaded = False
 
-    def set_log_level(
+    def set_logger(
             self,
+            log_file: T.Optional[str] = None,
             level: str = 'INFO'):
         """Set the log level."""
         logger.remove()
         logger.add(
             sys.stderr, level=level,
         )
+        if log_file is not None:
+            logger.info(f'Logging to {log_file}')
+            logger.add(
+                log_file, level=level,
+            )
         return self
 
     def init_model(
