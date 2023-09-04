@@ -20,7 +20,7 @@ BASE_STORE_URL = 'https://huggingface.co/GangCaoLab/U-FISH/resolve/main/'
 class UFish():
     def __init__(
             self, cuda: bool = True,
-            default_weights_file: str = 'v1.1-gaussian_target.pth',
+            default_weights_file: str = 'v2.0-alldata-unet_d2_b32.onnx',
             local_store_path: str = '~/.ufish/'
             ) -> None:
         """
@@ -114,21 +114,6 @@ class UFish():
             inp = torch.rand(1, 1, 512, 512).to(device)
             self.model = torch.jit.trace(self.model, inp)
 
-    def load_weights(self, weights_path: T.Union[Path, str]) -> None:
-        """Load weights from a local file.
-
-        Args:
-            weights_path: The path to the weights file."""
-        import torch
-        if self.model is None:
-            self.init_model()
-        assert self.model is not None
-        weights_path = str(weights_path)
-        logger.info(f'Loading weights from {weights_path}')
-        device = torch.device('cuda' if self.cuda else 'cpu')
-        state_dict = torch.load(weights_path, map_location=device)
-        self.model.load_state_dict(state_dict)
-
     def load_weights_from_internet(
             self,
             weights_file: T.Optional[str] = None,
@@ -173,7 +158,41 @@ class UFish():
                     f'Error downloading weights from {weight_url}.')
         self.load_weights(local_weight_path)
 
-    def load_onnx(
+    def load_weights(
+            self,
+            path: T.Union[Path, str],
+            ) -> None:
+        """Load weights from a local file.
+        The file can be a .pth file or an .onnx file.
+
+        Args:
+            path: The path to the weights file.
+        """
+        path = str(path)
+        if path.endswith('.pth'):
+            self._load_pth_file(path)
+        elif path.endswith('.onnx'):
+            self._load_onnx(path)
+        else:
+            raise ValueError(
+                'Weights file must be a pth file or an onnx file.')
+
+    def _load_pth_file(self, path: T.Union[Path, str]) -> None:
+        """Load weights from a local file.
+
+        Args:
+            path: The path to the pth weights file."""
+        import torch
+        if self.model is None:
+            self.init_model()
+        assert self.model is not None
+        path = str(path)
+        logger.info(f'Loading weights from {path}')
+        device = torch.device('cuda' if self.cuda else 'cpu')
+        state_dict = torch.load(path, map_location=device)
+        self.model.load_state_dict(state_dict)
+
+    def _load_onnx(
             self,
             onnx_path: T.Union[Path, str],
             providers: T.Optional[T.List[str]] = None,

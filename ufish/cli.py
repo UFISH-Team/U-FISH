@@ -11,7 +11,7 @@ class UFishCLI():
             self,
             cuda: bool = True,
             local_store_path: str = '~/.ufish/',
-            weights_file_name: str = 'v1.1-gaussian_target.pth',
+            weights_file_name: str = 'v2.0-alldata-unet_d2_b32.onnx',
             ):
         from .api import UFish
         self._ufish = UFish(
@@ -95,22 +95,6 @@ class UFishCLI():
         self._weights_loaded = True
         return self
 
-    def load_onnx(
-            self,
-            onnx_path: T.Union[Path, str],
-            providers: T.Optional[T.List[str]] = None,
-            ) -> None:
-        """Load weights from a local ONNX file,
-        and create an onnxruntime session.
-
-        Args:
-            onnx_path: The path to the ONNX file.
-            providers: The providers to use.
-        """
-        self._ufish.load_onnx(onnx_path, providers=providers)
-        self._weights_loaded = True
-        return self
-
     def enhance_img(
             self,
             input_img_path: str,
@@ -123,7 +107,7 @@ class UFishCLI():
         logger.info(f'Enhancing {input_img_path}')
         img = imread(input_img_path)
         enhanced = self._ufish.enhance_img(img)
-        imsave(output_img_path, enhanced)
+        imsave(output_img_path, enhanced, check_contrast=False)
         logger.info(f'Saved enhanced image to {output_img_path}')
 
     def call_spots_cc_center(
