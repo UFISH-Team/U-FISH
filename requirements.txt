@@ -10,3 +10,5 @@ fire
 loguru
 tensorboard
 imagecodecs
+onnxruntime
+onnxruntime-gpu

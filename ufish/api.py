@@ -11,6 +11,7 @@ from .utils.log import logger
 if T.TYPE_CHECKING:
     from torch import nn
     from matplotlib.figure import Figure
+    import onnxruntime
 
 
 BASE_STORE_URL = 'https://huggingface.co/GangCaoLab/U-FISH/resolve/main/'
@@ -31,6 +32,7 @@ class UFish():
         self._cuda = cuda
         self._infer_mode = False
         self.model: T.Optional["nn.Module"] = None
+        self.ort_session: T.Optional["onnxruntime.InferenceSession"] = None
         self.default_weights_file = default_weights_file
         self.store_base_url = BASE_STORE_URL
         self.local_store_path = Path(
@@ -68,6 +70,37 @@ class UFish():
                 logger.warning('CUDA is not available, using CPU.')
         else:
             logger.info('CUDA is not used, using CPU.')
+
+    def convert_to_onnx(
+            self,
+            output_path: T.Union[Path, str],) -> None:
+        """Convert the model to ONNX format.
+
+        Args:
+            output_path: The path to the output ONNX file.
+        """
+        if self.model is None:
+            raise RuntimeError('Model is not initialized.')
+        self._turn_on_infer_mode(trace_model=True)
+        import torch
+        import torch.onnx
+        output_path = str(output_path)
+        logger.info(
+            f'Converting model to ONNX format, saving to {output_path}')
+        device = torch.device('cuda' if self.cuda else 'cpu')
+        inp = torch.rand(1, 1, 512, 512).to(device)
+        dyn_axes = {0: 'batch_size', 2: 'y', 3: 'x'}
+        torch.onnx.export(
+            self.model, inp, output_path,
+            input_names=['input'],
+            output_names=['output'],
+            opset_version=11,
+            do_constant_folding=True,
+            dynamic_axes={
+                'input': dyn_axes,
+                'output': dyn_axes,
+            },
+        )
 
     def _turn_on_infer_mode(self, trace_model: bool = False) -> None:
         """Turn on the infer mode."""
@@ -140,11 +173,60 @@ class UFish():
                     f'Error downloading weights from {weight_url}.')
         self.load_weights(local_weight_path)
 
+    def load_onnx(
+            self,
+            onnx_path: T.Union[Path, str],
+            providers: T.Optional[T.List[str]] = None,
+            ) -> None:
+        """Load weights from a local ONNX file,
+        and create an onnxruntime session.
+
+        Args:
+            onnx_path: The path to the ONNX file.
+            providers: The providers to use.
+        """
+        import onnxruntime
+        onnx_path = str(onnx_path)
+        logger.info(f'Loading ONNX from {onnx_path}')
+        if self._cuda:
+            providers = providers or ['CUDAExecutionProvider']
+        else:
+            providers = providers or ['CPUExecutionProvider']
+        self.ort_session = onnxruntime.InferenceSession(
+            onnx_path, providers=providers)
+
+    def infer(self, img: np.ndarray) -> np.ndarray:
+        """Infer the image using the U-Net model."""
+        if self.ort_session is not None:
+            output = self._infer_onnx(img)
+        elif self.model is not None:
+            output = self._infer_torch(img)
+        else:
+            raise RuntimeError(
+                'Both torch model and ONNX model are not initialized.')
+        return output
+
+    def _infer_torch(self, img: np.ndarray) -> np.ndarray:
+        """Infer the image using the torch model."""
+        self._turn_on_infer_mode()
+        import torch
+        tensor = torch.from_numpy(img).float()
+        if self.cuda:
+            tensor = tensor.cuda()
+        with torch.no_grad():
+            output = self.model(tensor)
+        output = output.detach().cpu().numpy()
+        return output
+
+    def _infer_onnx(self, img: np.ndarray) -> np.ndarray:
+        """Infer the image using the ONNX model."""
+        ort_inputs = {self.ort_session.get_inputs()[0].name: img}
+        ort_outs = self.ort_session.run(None, ort_inputs)
+        output = ort_outs[0]
+        return output
+
     def enhance_img(self, img: np.ndarray, batch_size: int = 4) -> np.ndarray:
         """Enhance the image using the U-Net model."""
-        if self.model is None:
-            raise RuntimeError('Model is not initialized.')
-        self._turn_on_infer_mode()
         from .utils.misc import scale_image
         img = scale_image(img, warning=True)
         if img.ndim == 2:
@@ -157,26 +239,16 @@ class UFish():
 
     def _enhance_img2d(self, img: np.ndarray) -> np.ndarray:
         """Enhance a 2D image."""
-        import torch
-        tensor = torch.from_numpy(img).float().unsqueeze(0).unsqueeze(0)
-        if self.cuda:
-            tensor = tensor.cuda()
-        with torch.no_grad():
-            output = self.model(tensor)
-        output = output.squeeze(0).squeeze(0).cpu().numpy()
+        output = self.infer(img[np.newaxis, np.newaxis])[0, 0]
         return output
 
     def _enhance_img3d(
             self, img: np.ndarray, batch_size: int = 4) -> np.ndarray:
         """Enhance a 3D image."""
-        import torch
-        tensor = torch.from_numpy(img).float().unsqueeze(1)
-        if self.cuda:
-            tensor = tensor.cuda()
-        with torch.no_grad():
-            for i in range(0, tensor.shape[0], batch_size):
-                tensor[i:i+batch_size] = self.model(tensor[i:i+batch_size])
-        output = tensor.squeeze(1).cpu().numpy()
+        output = np.zeros_like(img)
+        for i in range(0, output.shape[0], batch_size):
+            _slice = img[i:i+batch_size][:, np.newaxis]
+            output[i:i+batch_size] = self.infer(_slice)[:, 0]
         return output
 
     def call_spots_cc_center(

@@ -57,6 +57,16 @@ class UFishCLI():
         )
         return self
 
+    def convert_to_onnx(
+            self,
+            output_path: T.Union[Path, str],) -> None:
+        """Convert the model to ONNX format.
+
+        Args:
+            output_path: The path to the output ONNX file.
+        """
+        self._ufish.convert_to_onnx(output_path)
+
     def load_weights(
             self,
             weights_path: T.Optional[str] = None,
@@ -82,6 +92,22 @@ class UFishCLI():
                 max_retry=max_retry,
                 force_download=force_download,
             )
+        self._weights_loaded = True
+        return self
+
+    def load_onnx(
+            self,
+            onnx_path: T.Union[Path, str],
+            providers: T.Optional[T.List[str]] = None,
+            ) -> None:
+        """Load weights from a local ONNX file,
+        and create an onnxruntime session.
+
+        Args:
+            onnx_path: The path to the ONNX file.
+            providers: The providers to use.
+        """
+        self._ufish.load_onnx(onnx_path, providers=providers)
         self._weights_loaded = True
         return self
 
