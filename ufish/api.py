@@ -41,7 +41,7 @@ class UFish():
     def init_model(
             self,
             model_type: str = 'unet',
-            depth=3, base_channels=32) -> None:
+            depth=2, base_channels=32) -> None:
         """Initialize the model.
 
         Args:

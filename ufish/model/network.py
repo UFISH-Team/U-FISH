@@ -149,7 +149,7 @@ class BottoleneckBlock(nn.Module):
 class UNet(nn.Module):
     def __init__(
             self, in_channels=1, out_channels=1,
-            depth=3, base_channels=64):
+            depth=2, base_channels=32):
         super(UNet, self).__init__()
 
         self.encoders = nn.ModuleList()
