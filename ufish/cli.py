@@ -197,7 +197,7 @@ class UFishCLI():
         pred_df.to_csv(output_csv_path, index=False)
         logger.info(f'Saved predicted spots to {output_csv_path}')
         if enhanced_output_path is not None:
-            imsave(enhanced_output_path, enhanced)
+            imsave(enhanced_output_path, enhanced, check_contrast=False)
             logger.info(f'Saved enhanced image to {enhanced_output_path}')
 
     def pred_2d_imgs(
@@ -459,7 +459,7 @@ class UFishCLI():
             root_dir: T.Optional[str] = None,
             img_glob: str = '*.tif',
             coord_glob: str = '*.csv',
-            target_process: str = 'gaussian',
+            target_process: T.Optional[str] = 'gaussian',
             loader_workers: int = 4,
             data_argu: bool = False,
             argu_prob: float = 0.5,
@@ -483,7 +483,9 @@ class UFishCLI():
                 If using meta csv, the root directory of the dataset.
             coord_glob: The glob pattern for the coordinate files.
             target_process: The target image processing method.
-                'gaussian' or 'dialation'. default 'gaussian'.
+                'gaussian' or 'dialation' or None.
+                If None, no processing will be applied.
+                default 'gaussian'.
             loader_workers: The number of workers to use for the data loader.
             data_argu: Whether to use data augmentation.
             argu_prob: The probability to use data augmentation.

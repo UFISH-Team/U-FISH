@@ -122,7 +122,7 @@ class FISHSpotsDataset(Dataset):
         """
         self.reader = reader
         self.transform = transform
-        self.process_func = process_func or self.gaussian_filter
+        self.process_func = process_func
 
     @staticmethod
     def gaussian_filter(mask: np.ndarray, sigma=1) -> np.ndarray:
@@ -168,7 +168,8 @@ class FISHSpotsDataset(Dataset):
         c = c[(c[:, 0] >= 0) & (c[:, 0] < shape[0])]
         c = c[(c[:, 1] >= 0) & (c[:, 1] < shape[1])]
         mask[c[:, 0], c[:, 1]] = 1
-        mask = self.process_func(mask)
+        if self.process_func:
+            mask = self.process_func(mask)
         mask = np.expand_dims(mask, axis=0)
         return mask
 

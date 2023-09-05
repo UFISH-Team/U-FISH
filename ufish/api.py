@@ -516,7 +516,7 @@ class UFish():
             root_dir: T.Optional[str] = None,
             img_glob: str = '*.tif',
             coord_glob: str = '*.csv',
-            target_process: str = 'gaussian',
+            target_process: T.Optional[str] = 'gaussian',
             loader_workers: int = 4,
             data_argu: bool = False,
             argu_prob: float = 0.5,
@@ -541,7 +541,9 @@ class UFish():
             img_glob: The glob pattern for the image files.
             coord_glob: The glob pattern for the coordinate files.
             target_process: The target image processing method.
-                'gaussian' or 'dialation'. default 'gaussian'.
+                'gaussian' or 'dialation' or None.
+                If None, no processing will be applied.
+                default 'gaussian'.
             loader_workers: The number of workers to use for the data loader.
             data_argu: Whether to use data augmentation.
             argu_prob: The probability to use data augmentation.
@@ -572,8 +574,10 @@ class UFish():
         logger.info(f'Using {target_process} as target process.')
         if target_process == 'gaussian':
             process_func = FISHSpotsDataset.gaussian_filter
-        else:
+        elif target_process == 'dialation':
             process_func = FISHSpotsDataset.dialate_mask
+        else:
+            process_func = None
 
         logger.info(f"Loading training dataset from {train_path}")
         train_dataset = self._load_dataset(
