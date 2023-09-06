@@ -144,7 +144,7 @@ class UFishCLI():
             enhanced_img_path: str,
             output_csv_path: str,
             connectivity: int = 2,
-            intensity_threshold: float = 0.1,
+            intensity_threshold: float = 0.5,
             ):
         """Call spots by finding local maxima.
 
@@ -173,7 +173,7 @@ class UFishCLI():
             output_csv_path: str,
             enhanced_output_path: T.Optional[str] = None,
             connectivity: int = 2,
-            intensity_threshold: float = 0.1,
+            intensity_threshold: float = 0.5,
             ):
         """Predict spots in a 2d image.
 

@@ -297,7 +297,7 @@ class UFish():
     def call_spots_local_maxima(
             self, enhanced_img: np.ndarray,
             connectivity: int = 2,
-            intensity_threshold: float = 0.1,
+            intensity_threshold: float = 0.5,
             ) -> pd.DataFrame:
         """Call spots by finding the local maxima.
 
@@ -321,7 +321,7 @@ class UFish():
     def pred_2d(
             self, img: np.ndarray,
             connectivity: int = 2,
-            intensity_threshold: float = 0.1,
+            intensity_threshold: float = 0.5,
             return_enhanced_img: bool = False,
             ) -> T.Union[pd.DataFrame, T.Tuple[pd.DataFrame, np.ndarray]]:
         """Predict the spots in a 2D image.
