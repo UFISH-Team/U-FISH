@@ -136,13 +136,13 @@ class BottoleneckBlock(nn.Module):
     def __init__(self, channels):
         super(BottoleneckBlock, self).__init__()
         self.conv1 = ResidualBlock(channels)
-        self.cbam = CBAM(channels)
         self.conv2 = ResidualBlock(channels)
+        self.conv3 = ResidualBlock(channels)
 
     def forward(self, x):
         out = self.conv1(x)
-        out = self.cbam(out)
         out = self.conv2(out)
+        out = self.conv3(out)
         return out
 
 
