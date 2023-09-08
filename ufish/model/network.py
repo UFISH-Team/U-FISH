@@ -149,7 +149,7 @@ class BottoleneckBlock(nn.Module):
 class FinalDecoderBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(FinalDecoderBlock, self).__init__()
-        self.cbam = CBAM(out_channels)
+        self.cbam = CBAM(in_channels)
         self.conv = ConvBlock(in_channels, out_channels)
 
     def forward(self, x):
