@@ -348,6 +348,34 @@ class UFish():
         else:
             return df
 
+    def pred(
+            self, img: np.ndarray,
+            axes: T.Optional[str] = None,
+            intensity_threshold: float = 0.5,
+            return_enhanced_img: bool = False,
+            batch_size: int = 4,
+            ) -> T.Union[pd.DataFrame, T.Tuple[pd.DataFrame, np.ndarray]]:
+        """Predict the spots in an image.
+        
+        Args:
+            img: The image to predict, it should be a multi dimensional array.
+                For example, shape (c, z, y, x) for a 4D image,
+                shape (z, y, x) for a 3D image,
+                shape (y, x) for a 2D image.
+            axes: The axes of the image.
+                For example, 'czxy' for a 4D image,
+                'yx' for a 2D image.
+                If None, will try to infer the axes from the shape.
+            intensity_threshold: The threshold for the intensity.
+            return_enhanced_img: Whether to return the enhanced image.
+            batch_size: The batch size for inference.
+                Used only when the image dimension is 3 or higher.
+        """
+        from .utils.misc import infer_img_axes, check_img_axes
+        if axes is None:
+            axes = infer_img_axes(img.shape)
+        check_img_axes(axes)
+
     def evaluate_result_dp(
             self,
             pred: pd.DataFrame,

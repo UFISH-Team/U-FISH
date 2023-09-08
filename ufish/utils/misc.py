@@ -55,3 +55,74 @@ def img_has_outlier(
         return True
     else:
         return False
+
+
+def infer_img_axes(shape: tuple) -> str:
+    """Infer the axes of an image.
+
+    Args:
+        shape: Shape of the image.
+    """
+    if len(shape) == 2:
+        return 'yx'
+    elif len(shape) == 3:
+        return 'zyx'
+    elif len(shape) == 4:
+        return 'czyx'
+    elif len(shape) == 5:
+        return 'tczyx'
+    else:
+        raise ValueError(
+            f'Image shape {shape} is not supported. ')
+
+
+def check_img_axes(axes: str):
+    """Check if the axes of an image is valid.
+
+    Args:
+        axes: Axes of the image.
+    """
+    if len(axes) < 2 or len(axes) > 5:
+        raise ValueError(
+            f'Axes {axes} is not supported. ')
+    if len(axes) != len(set(axes)):
+        raise ValueError(
+            f'Axes {axes} must be unique. ')
+    if 'y' not in axes:
+        raise ValueError(
+            f'Axes {axes} must contain y. ')
+    if 'x' not in axes:
+        raise ValueError(
+            f'Axes {axes} must contain x. ')
+
+
+def map_enhfunc_to_img(
+        enh_2d: callable,
+        enh_3d: callable,
+        img: np.ndarray,
+        axes: str,
+        inplace: bool = False,
+        ):
+    yx_idx = [axes.index(c) for c in 'yx']
+    # move yx to the last two axes
+    img = np.moveaxis(img, yx_idx, [-2, -1])
+    if inplace:
+        e_img = img
+        e_img = e_img.astype(np.float32)
+    if len(img.shape) == 2:
+        e_img = enh_2d(img)
+    elif len(img.shape) == 3:
+        e_img = enh_3d(img)
+    elif len(img.shape) == 4:
+        e_img = np.zeros_like(img)
+        for i, img_3d in enumerate(img):
+            e_img[i] = enh_3d(img_3d)
+    else:
+        assert len(img.shape) == 5
+        e_img = np.zeros_like(img)
+        for i, img_4d in enumerate(img):
+            for j, img_3d in enumerate(img_4d):
+                e_img[i, j] = enh_3d(img_3d)
+    # move yx back to the original position
+    e_img = np.moveaxis(e_img, [-2, -1], yx_idx)
+    return e_img

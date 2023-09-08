@@ -31,6 +31,7 @@ The underlying concept of our method, U-FISH, acknowledges the significant varia
     + [ ] Other shape
 - [ ] Benchmark
 - [ ] 3D integration method
+- [ ] Support for multi-channel images
 - [ ] Support for zarr format
 - [ ] Documentation
 
