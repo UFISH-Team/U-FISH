@@ -136,11 +136,25 @@ class BottoleneckBlock(nn.Module):
     def __init__(self, channels):
         super(BottoleneckBlock, self).__init__()
         self.conv1 = ResidualBlock(channels)
+        self.cbam = CBAM(channels)
         self.conv2 = ResidualBlock(channels)
 
     def forward(self, x):
         out = self.conv1(x)
+        out = self.cbam(out)
         out = self.conv2(out)
+        return out
+
+
+class FinalDecoderBlock(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(FinalDecoderBlock, self).__init__()
+        self.cbam = CBAM(out_channels)
+        self.conv = ConvBlock(in_channels, out_channels)
+
+    def forward(self, x):
+        out = self.cbam(x)
+        out = self.conv(out)
         return out
 
 
@@ -172,7 +186,7 @@ class UNet(nn.Module):
                 DecoderBlock(2*input_channels, output_channels))
             self.upsamples.append(UpConv(input_channels, output_channels))
 
-        self.final_decoder = DecoderBlock(base_channels, out_channels)
+        self.final_decoder = FinalDecoderBlock(base_channels, out_channels)
 
     def forward(self, x):
         encodings = []
