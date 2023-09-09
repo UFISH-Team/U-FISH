@@ -1,4 +1,6 @@
+import typing as T
 import numpy as np
+import pandas as pd
 from skimage.exposure import rescale_intensity
 
 
@@ -96,33 +98,62 @@ def check_img_axes(axes: str):
             f'Axes {axes} must contain x. ')
 
 
-def map_enhfunc_to_img(
-        enh_2d: callable,
-        enh_3d: callable,
+def expand_df_axes(
+        df: pd.DataFrame, axes: str,
+        axes_vals: T.Sequence[int],
+        ) -> pd.DataFrame:
+    """Expand the axes of a DataFrame."""
+    # insert new columns
+    for i, vals in enumerate(axes_vals):
+        df.insert(i, axes[i], vals)
+    df.columns = list(axes)
+    return df
+
+
+def map_predfunc_to_img(
+        predfunc: T.Callable[
+            [np.ndarray],
+            T.Tuple[pd.DataFrame, np.ndarray]
+        ],
         img: np.ndarray,
         axes: str,
         inplace: bool = False,
         ):
+    from .log import logger
     yx_idx = [axes.index(c) for c in 'yx']
     # move yx to the last two axes
     img = np.moveaxis(img, yx_idx, [-2, -1])
+    df_axes = axes.replace('y', '').replace('x', '') + 'yx'
+    dfs = []
     if inplace:
         e_img = img
         e_img = e_img.astype(np.float32)
-    if len(img.shape) == 2:
-        e_img = enh_2d(img)
-    elif len(img.shape) == 3:
-        e_img = enh_3d(img)
+    if len(img.shape) in (2, 3):
+        df, e_img = predfunc(img)
+        df = expand_df_axes(df, df_axes, [])
+        dfs.append(df)
     elif len(img.shape) == 4:
         e_img = np.zeros_like(img)
         for i, img_3d in enumerate(img):
-            e_img[i] = enh_3d(img_3d)
+            logger.log(f'Processing image {i+1}/{len(img)}')
+            df, e_img[i] = predfunc(img_3d)
+            df = expand_df_axes(df, df_axes, [i])
+            dfs.append(df)
     else:
         assert len(img.shape) == 5
         e_img = np.zeros_like(img)
+        num_imgs = img.shape[0] * img.shape[1]
         for i, img_4d in enumerate(img):
             for j, img_3d in enumerate(img_4d):
-                e_img[i, j] = enh_3d(img_3d)
+                logger.log(
+                    f'Processing image {i*img.shape[1]+j+1}/{num_imgs}')
+                df, e_img[i, j] = predfunc(img_3d)
+                df = expand_df_axes(df, df_axes, [i, j])
+                dfs.append(df)
     # move yx back to the original position
     e_img = np.moveaxis(e_img, [-2, -1], yx_idx)
-    return e_img
+    res_df = pd.concat(dfs, ignore_index=True)
+    # re-order columns
+    res_df = res_df[list(axes)]
+    res_df.columns = [f'axis-{i}' for i in range(len(axes))]
+    return res_df, e_img
