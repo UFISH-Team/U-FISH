@@ -167,7 +167,7 @@ class UFishCLI():
         pred_df.to_csv(output_csv_path, index=False)
         logger.info(f'Saved predicted spots to {output_csv_path}')
 
-    def pred_img(
+    def predict(
             self,
             input_img_path: str,
             output_csv_path: str,
@@ -192,7 +192,7 @@ class UFishCLI():
             self.load_weights()
         logger.info(f'Predicting {input_img_path}')
         img = imread(input_img_path)
-        pred_df, enhanced = self._ufish.pred(
+        pred_df, enhanced = self._ufish.predict(
             img, axes=axes,
             intensity_threshold=intensity_threshold,
         )
@@ -202,7 +202,7 @@ class UFishCLI():
             imsave(enhanced_output_path, enhanced, check_contrast=False)
             logger.info(f'Saved enhanced image to {enhanced_output_path}')
 
-    def pred_2d_imgs(
+    def predict_imgs(
             self,
             input_path: str,
             output_dir: str,

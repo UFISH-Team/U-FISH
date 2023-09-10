@@ -332,7 +332,7 @@ class UFish():
         )
         return df, enhanced_img
 
-    def pred(
+    def predict(
             self, img: np.ndarray,
             axes: T.Optional[str] = None,
             intensity_threshold: float = 0.5,

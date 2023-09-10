@@ -16,23 +16,26 @@ The underlying concept of our method, U-FISH, acknowledges the significant varia
   + [x] Evaluation
   + [x] Plotting tool for show TP, FP, FN
   + [x] Training
-- [ ] Napari plugin
+- [x] Add more datasets
+  + [x] ExSeq
+  + [x] MER-FISH
+  + [x] seqFISH
+- [x] Try other signal footprint
+  + [x] Gaussian
+  + [ ] Other shape
+- [x] Support for multi-channel images.
+- [ ] 3D integration method
+  + [x] Stack 2D UEI to 3D, then apply local maxima.
 - [ ] deploy
   + [x] setup.py
   + [x] upload model weights to huggingface
   + [ ] upload package to PyPI
   + [ ] Upload to BioImageIO model zoo
-- [x] Add more datasets
-    + [x] ExSeq
-    + [x] MER-FISH
-    + [x] seqFISH
-- [x] Try other signal footprint
-    + [x] Gaussian
-    + [ ] Other shape
-- [ ] Benchmark
-- [ ] 3D integration method
-- [ ] Support for multi-channel images
-- [ ] Support for zarr format
+- GUI
+  + [ ] Napari plugin
+  + [ ] Web page
+- [ ] Benchmarks
+- [ ] Support for image chunks and zarr file format.
 - [ ] Documentation
 
 ## Usage
@@ -95,25 +98,25 @@ CLI usage:
 $ python -m ufish
 
 # using --help to see details of each sub-command, e.g.:
-$ ufish pred_2d_img --help
+$ ufish predict --help
 
 # predict one image
-$ ufish pred_2d_img input.tiff output.csv
+$ ufish predict input.tiff output.csv
 
 # predict all images in a directory
-$ ufish pred_2d_imgs input_dir output_dir
+$ ufish predict-imgs input_dir output_dir
 
 # load a trained model and predict
-$ ufish load_weights path/to/weights - pred_2d_img input.tiff output.csv
+$ ufish load-weights path/to/weights - predict-imgs input.tiff output.csv
 
 # training from scratch
 $ ufish train path/to/train_dir path/to/val_dir --model_save_path path/to/save/model
 
 # training from a pre-trained model (fine-tuning)
-$ ufish load_weights path/to/weights - train path/to/train_dir path/to/val_dir --model_save_path path/to/save/model
+$ ufish load-weights path/to/weights - train path/to/train_dir path/to/val_dir --model_save_path path/to/save/model
 
 # evaluate prediction results in a directory
-$ ufish evaluate_imgs path/to/pred_dir path/to/true_dir output.csv
+$ ufish evaluate-imgs path/to/pred_dir path/to/true_dir output.csv
 ```
 
 ## Dataset
