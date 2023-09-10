@@ -359,18 +359,16 @@ class UFish():
         )
         from functools import partial
         if axes is None:
+            logger.info("Axes not specified, infering from image shape.")
             axes = infer_img_axes(img.shape)
-            logger.info(
-                "Axes not specified, infering from image shape." +
-                f" Inferred axes: {axes}"
-            )
+            logger.info(f"Infered axes: {axes}, image shape: {img.shape}")
         check_img_axes(axes)
         predfunc = partial(
             self._pred_2d_or_3d, 
             intensity_threshold=intensity_threshold,
             batch_size=batch_size)
         df, enhanced_img = map_predfunc_to_img(
-            predfunc, img, axes, inplace=True)
+            predfunc, img, axes)
         return df, enhanced_img
 
     def evaluate_result_dp(

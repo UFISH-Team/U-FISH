@@ -68,11 +68,20 @@ def infer_img_axes(shape: tuple) -> str:
     if len(shape) == 2:
         return 'yx'
     elif len(shape) == 3:
-        return 'zyx'
+        min_dim_idx = shape.index(min(shape))
+        low_dim_shape = list(shape)
+        low_dim_shape.pop(min_dim_idx)
+        low_dim_axes = infer_img_axes(tuple(low_dim_shape))
+        return low_dim_axes[:min_dim_idx] + 'z' + low_dim_axes[min_dim_idx:]
     elif len(shape) == 4:
-        return 'czyx'
+        min_dim_idx = shape.index(min(shape))
+        low_dim_shape = list(shape)
+        low_dim_shape.pop(min_dim_idx)
+        low_dim_axes = infer_img_axes(tuple(low_dim_shape))
+        return low_dim_axes[:min_dim_idx] + 'c' + low_dim_axes[min_dim_idx:]
     elif len(shape) == 5:
-        return 'tczyx'
+        low_dim_shape = infer_img_axes(shape[1:])
+        return 't' + low_dim_shape
     else:
         raise ValueError(
             f'Image shape {shape} is not supported. ')
@@ -117,7 +126,6 @@ def map_predfunc_to_img(
         ],
         img: np.ndarray,
         axes: str,
-        inplace: bool = False,
         ):
     from .log import logger
     yx_idx = [axes.index(c) for c in 'yx']
@@ -125,27 +133,24 @@ def map_predfunc_to_img(
     img = np.moveaxis(img, yx_idx, [-2, -1])
     df_axes = axes.replace('y', '').replace('x', '') + 'yx'
     dfs = []
-    if inplace:
-        e_img = img
-        e_img = e_img.astype(np.float32)
     if len(img.shape) in (2, 3):
         df, e_img = predfunc(img)
         df = expand_df_axes(df, df_axes, [])
         dfs.append(df)
     elif len(img.shape) == 4:
-        e_img = np.zeros_like(img)
+        e_img = np.zeros_like(img, dtype=np.float32)
         for i, img_3d in enumerate(img):
-            logger.log(f'Processing image {i+1}/{len(img)}')
+            logger.info(f'Processing image {i+1}/{len(img)}')
             df, e_img[i] = predfunc(img_3d)
             df = expand_df_axes(df, df_axes, [i])
             dfs.append(df)
     else:
         assert len(img.shape) == 5
-        e_img = np.zeros_like(img)
+        e_img = np.zeros_like(img, dtype=np.float32)
         num_imgs = img.shape[0] * img.shape[1]
         for i, img_4d in enumerate(img):
             for j, img_3d in enumerate(img_4d):
-                logger.log(
+                logger.info(
                     f'Processing image {i*img.shape[1]+j+1}/{num_imgs}')
                 df, e_img[i, j] = predfunc(img_3d)
                 df = expand_df_axes(df, df_axes, [i, j])
