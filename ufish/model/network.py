@@ -227,7 +227,7 @@ class FCN(nn.Module):
             elif i == (depth - 1):
                 self.layers.append(ResidualBlock(base_channels))
             else:
-                self.layers.append(ConvBlock(base_channels, base_channels))
+                self.layers.append(ConvBlock(base_channels, out_channels))
 
     def forward(self, x):
         for layer in self.layers:
