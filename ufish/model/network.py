@@ -89,13 +89,10 @@ class SpatialAttention(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-        # 1*h*w
         avg_out = torch.mean(x, dim=1, keepdim=True)
         max_out, _ = torch.max(x, dim=1, keepdim=True)
         x = torch.cat([avg_out, max_out], dim=1)
-        # 2*h*w
         x = self.conv(x)
-        # 1*h*w
         return self.sigmoid(x)
 
 
@@ -103,6 +100,7 @@ class CBAM(nn.Module):
     """Convolutional Block Attention Module"""
     def __init__(self, input_nc, ratio=16, kernel_size=7):
         super(CBAM, self).__init__()
+        ratio = min(ratio, input_nc)
         self.channel_attention = ChannelAttention(input_nc, ratio)
         self.spatial_attention = SpatialAttention(kernel_size)
 
@@ -161,32 +159,35 @@ class FinalDecoderBlock(nn.Module):
 class UNet(nn.Module):
     def __init__(
             self, in_channels=1, out_channels=1,
-            depth=2, base_channels=32):
+            depth=2, base_channels=32,
+            channel_change_ratio=0.5):
         super(UNet, self).__init__()
+        r = channel_change_ratio
+        b = base_channels
 
         self.encoders = nn.ModuleList()
         self.downsamples = nn.ModuleList()
         for i in range(depth):
-            input_channels = (
-                in_channels if i == 0 else base_channels
-            )
-            output_channels = base_channels
-            self.encoders.append(
-                EncoderBlock(input_channels, output_channels))
-            self.downsamples.append(DownConv(output_channels, output_channels))
+            e_o = int(b * (r ** i))
+            e_i = (in_channels if i == 0 else e_o)
+            self.encoders.append(EncoderBlock(e_i, e_o))
+            d_i = e_o
+            d_o = int(b * (r ** (i + 1)))
+            self.downsamples.append(DownConv(d_i, d_o))
 
-        self.bottom = BottoleneckBlock(base_channels)
+        self.bottom = BottoleneckBlock(int(b * (r ** depth)))
 
         self.decoders = nn.ModuleList()
         self.upsamples = nn.ModuleList()
-        for i in range(depth, 0, -1):
-            input_channels = base_channels
-            output_channels = base_channels
-            self.decoders.append(
-                DecoderBlock(2*input_channels, output_channels))
-            self.upsamples.append(UpConv(input_channels, output_channels))
+        for i in range(depth-1, -1, -1):
+            u_i = int(b * (r ** (i + 1)))
+            u_o = int(b * (r ** i))
+            self.upsamples.append(UpConv(u_i, u_o))
+            d_i = u_o * 2
+            d_o = int(b * (r ** i))
+            self.decoders.append(DecoderBlock(d_i, d_o))
 
-        self.final_decoder = FinalDecoderBlock(base_channels, out_channels)
+        self.final_decoder = FinalDecoderBlock(b, out_channels)
 
     def forward(self, x):
         encodings = []
@@ -207,29 +208,4 @@ class UNet(nn.Module):
             x = decoder(x)
 
         x = self.final_decoder(x)
-        return x
-
-
-class FCN(nn.Module):
-    """Single level fully convolutional network."""
-    def __init__(
-            self,
-            in_channels: int = 1,
-            out_channels: int = 1,
-            depth: int = 10,
-            base_channels: int = 32,
-            ):
-        super().__init__()
-        self.layers = nn.ModuleList()
-        for i in range(depth):
-            if i == 0:
-                self.layers.append(ConvBlock(in_channels, base_channels))
-            elif i == (depth - 1):
-                self.layers.append(ResidualBlock(base_channels))
-            else:
-                self.layers.append(ConvBlock(base_channels, out_channels))
-
-    def forward(self, x):
-        for layer in self.layers:
-            x = layer(x)
         return x

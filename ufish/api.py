@@ -41,24 +41,24 @@ class UFish():
     def init_model(
             self,
             model_type: str = 'unet',
-            depth=2, base_channels=32) -> None:
+            **kwargs) -> None:
         """Initialize the model.
 
         Args:
             model_type: The type of the model. 'unet' or 'fcn'.
-            depth: The depth of the network.
-            base_channels: The number of base channels.
+            **kwargs: The keyword arguments for the model.
         """
         import torch
         if model_type == 'unet':
             from .model.network import UNet
-            self.model = UNet(depth=depth, base_channels=base_channels)
+            self.model = UNet(**kwargs)
         else:
-            from .model.network import FCN
-            self.model = FCN(depth=depth, base_channels=base_channels)
+            raise ValueError(f'Unknown model type: {model_type}')
         params = sum(p.numel() for p in self.model.parameters())
-        logger.info(f'Initializing {model_type} model with depth={depth}, '
-                    f'base_channels={base_channels}')
+        logger.info(
+            f'Initializing {model_type} model with setting: \n' +
+            f'{kwargs}'
+        )
         logger.info(f'Number of parameters: {params}')
         self.cuda = False
         if self._cuda:

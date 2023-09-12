@@ -40,20 +40,17 @@ class UFishCLI():
     def init_model(
             self,
             model_type: str = 'unet',
-            depth: int = 3,
-            base_channels: int = 64,
+            **kwargs
             ):
         """Initialize the model.
 
         Args:
             model_type: The type of the model. 'unet' or 'fcn'.
-            depth: The depth of the network.
-            base_channels: The number of base channels.
+            **kwargs: The keyword arguments for the model.
         """
         self._ufish.init_model(
             model_type=model_type,
-            depth=depth,
-            base_channels=base_channels,
+            **kwargs
         )
         return self
 
