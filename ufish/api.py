@@ -339,7 +339,7 @@ class UFish():
             batch_size: int = 4,
             ) -> T.Tuple[pd.DataFrame, np.ndarray]:
         """Predict the spots in an image.
-        
+
         Args:
             img: The image to predict, it should be a multi dimensional array.
                 For example, shape (c, z, y, x) for a 4D image,
@@ -364,7 +364,7 @@ class UFish():
             logger.info(f"Infered axes: {axes}, image shape: {img.shape}")
         check_img_axes(axes)
         predfunc = partial(
-            self._pred_2d_or_3d, 
+            self._pred_2d_or_3d,
             intensity_threshold=intensity_threshold,
             batch_size=batch_size)
         df, enhanced_img = map_predfunc_to_img(
