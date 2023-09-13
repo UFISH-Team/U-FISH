@@ -109,11 +109,11 @@ def training_loop(
                 model.state_dict(),
                 f"{model_save_dir}/best_model.pth")
             logger.info(f"Best model saved with Val Loss: {val_loss:.4f}")
-        if epoch % save_period == 0:
+        if (epoch + 1) % save_period == 0:
             torch.save(
                 model.state_dict(),
-                f"{model_save_dir}/model_{epoch}.pth")
-            logger.info(f"Model saved at epoch {epoch}.")
+                f"{model_save_dir}/model_{epoch+1}.pth")
+            logger.info(f"Model saved at epoch {epoch+1}.")
 
     writer.close()
 

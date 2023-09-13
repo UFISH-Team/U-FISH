@@ -159,35 +159,26 @@ class FinalDecoderBlock(nn.Module):
 class UNet(nn.Module):
     def __init__(
             self, in_channels=1, out_channels=1,
-            depth=2, base_channels=32,
-            channel_change_ratio=0.5):
+            channel_numbers=[32, 16, 16]):
         super(UNet, self).__init__()
-        r = channel_change_ratio
-        b = base_channels
-
         self.encoders = nn.ModuleList()
         self.downsamples = nn.ModuleList()
-        for i in range(depth):
-            e_o = int(b * (r ** i))
-            e_i = (in_channels if i == 0 else e_o)
-            self.encoders.append(EncoderBlock(e_i, e_o))
-            d_i = e_o
-            d_o = int(b * (r ** (i + 1)))
-            self.downsamples.append(DownConv(d_i, d_o))
+        for i, c in enumerate(channel_numbers[:-1]):
+            _ei = (in_channels if i == 0 else c)
+            self.encoders.append(EncoderBlock(_ei, c))
+            self.downsamples.append(DownConv(c, channel_numbers[i+1]))
 
-        self.bottom = BottoleneckBlock(int(b * (r ** depth)))
+        self.bottom = BottoleneckBlock(channel_numbers[-1])
 
         self.decoders = nn.ModuleList()
         self.upsamples = nn.ModuleList()
-        for i in range(depth-1, -1, -1):
-            u_i = int(b * (r ** (i + 1)))
-            u_o = int(b * (r ** i))
-            self.upsamples.append(UpConv(u_i, u_o))
-            d_i = u_o * 2
-            d_o = int(b * (r ** i))
-            self.decoders.append(DecoderBlock(d_i, d_o))
+        rev_nums = channel_numbers[::-1]
+        for i, c in enumerate(rev_nums[1:]):
+            self.upsamples.append(UpConv(rev_nums[i], c))
+            self.decoders.append(DecoderBlock(2*c, c))
 
-        self.final_decoder = FinalDecoderBlock(b, out_channels)
+        self.final_decoder = FinalDecoderBlock(
+            channel_numbers[0], out_channels)
 
     def forward(self, x):
         encodings = []
