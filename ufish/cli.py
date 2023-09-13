@@ -209,7 +209,6 @@ class UFishCLI():
             data_base_dir: T.Optional[str] = None,
             img_glob: T.Optional[str] = None,
             save_enhanced_img: bool = True,
-            connectivity: int = 2,
             intensity_threshold: float = 0.1,
             ):
         """Predict spots in a directory of 2d images.
@@ -222,7 +221,6 @@ class UFishCLI():
                 Only used when input_path is a meta csv file.
             img_glob: The glob pattern for the images.
             save_enhanced_img: Whether to save the enhanced image.
-            connectivity: The connectivity for finding local maxima.
             intensity_threshold: The threshold for the intensity.
         """
         if not self._weights_loaded:
@@ -255,15 +253,13 @@ class UFishCLI():
                 self.call_spots_local_maxima(
                     str(enhanced_img_path),
                     str(output_path),
-                    connectivity=connectivity,
                     intensity_threshold=intensity_threshold,
                 )
             else:
-                self.pred_2d_img(
+                self.predict(
                     str(in_path),
                     str(output_path),
                     str(enhanced_img_path) if save_enhanced_img else None,
-                    connectivity=connectivity,
                     intensity_threshold=intensity_threshold,
                 )
 
