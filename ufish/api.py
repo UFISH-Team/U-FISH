@@ -318,35 +318,58 @@ class UFish():
             peaks, columns=[f'axis-{i}' for i in range(mask.ndim)])
         return df
 
-    def pred_2d(
+    def _pred_2d_or_3d(
             self, img: np.ndarray,
-            connectivity: int = 2,
             intensity_threshold: float = 0.5,
-            return_enhanced_img: bool = False,
-            ) -> T.Union[pd.DataFrame, T.Tuple[pd.DataFrame, np.ndarray]]:
-        """Predict the spots in a 2D image.
-
-        Args:
-            img: The 2D image to predict.
-            connectivity: The connectivity for the local maxima.
-            intensity_threshold: The threshold for the intensity.
-            return_enhanced_img: Whether to return the enhanced image.
-
-        Returns:
-            spots_df: A pandas dataframe containing the spots.
-            enhanced_img: The enhanced image. if return_enhanced_img is True.
-        """
-        assert img.ndim == 2, 'Image must be 2D.'
-        enhanced_img = self.enhance_img(img)
+            batch_size: int = 4,
+            ) -> T.Tuple[pd.DataFrame, np.ndarray]:
+        """Predict the spots in a 2D or 3D image. """
+        assert img.ndim in (2, 3), 'Image must be 2D or 3D.'
+        enhanced_img = self.enhance_img(img, batch_size=batch_size)
         df = self.call_spots_local_maxima(
-            enhanced_img,
-            connectivity=connectivity,
+            enhanced_img, connectivity=2,
             intensity_threshold=intensity_threshold,
         )
-        if return_enhanced_img:
-            return df, enhanced_img
-        else:
-            return df
+        return df, enhanced_img
+
+    def predict(
+            self, img: np.ndarray,
+            axes: T.Optional[str] = None,
+            intensity_threshold: float = 0.5,
+            batch_size: int = 4,
+            ) -> T.Tuple[pd.DataFrame, np.ndarray]:
+        """Predict the spots in an image.
+
+        Args:
+            img: The image to predict, it should be a multi dimensional array.
+                For example, shape (c, z, y, x) for a 4D image,
+                shape (z, y, x) for a 3D image,
+                shape (y, x) for a 2D image.
+            axes: The axes of the image.
+                For example, 'czxy' for a 4D image,
+                'yx' for a 2D image.
+                If None, will try to infer the axes from the shape.
+            intensity_threshold: The threshold for the intensity.
+            batch_size: The batch size for inference.
+                Used only when the image dimension is 3 or higher.
+        """
+        from .utils.misc import (
+            infer_img_axes, check_img_axes,
+            map_predfunc_to_img
+        )
+        from functools import partial
+        if axes is None:
+            logger.info("Axes not specified, infering from image shape.")
+            axes = infer_img_axes(img.shape)
+            logger.info(f"Infered axes: {axes}, image shape: {img.shape}")
+        check_img_axes(axes)
+        predfunc = partial(
+            self._pred_2d_or_3d,
+            intensity_threshold=intensity_threshold,
+            batch_size=batch_size)
+        df, enhanced_img = map_predfunc_to_img(
+            predfunc, img, axes)
+        return df, enhanced_img
 
     def evaluate_result_dp(
             self,

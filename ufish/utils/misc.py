@@ -1,4 +1,6 @@
+import typing as T
 import numpy as np
+import pandas as pd
 from skimage.exposure import rescale_intensity
 
 
@@ -55,3 +57,108 @@ def img_has_outlier(
         return True
     else:
         return False
+
+
+def infer_img_axes(shape: tuple) -> str:
+    """Infer the axes of an image.
+
+    Args:
+        shape: Shape of the image.
+    """
+    if len(shape) == 2:
+        return 'yx'
+    elif len(shape) == 3:
+        min_dim_idx = shape.index(min(shape))
+        low_dim_shape = list(shape)
+        low_dim_shape.pop(min_dim_idx)
+        low_dim_axes = infer_img_axes(tuple(low_dim_shape))
+        return low_dim_axes[:min_dim_idx] + 'z' + low_dim_axes[min_dim_idx:]
+    elif len(shape) == 4:
+        min_dim_idx = shape.index(min(shape))
+        low_dim_shape = list(shape)
+        low_dim_shape.pop(min_dim_idx)
+        low_dim_axes = infer_img_axes(tuple(low_dim_shape))
+        return low_dim_axes[:min_dim_idx] + 'c' + low_dim_axes[min_dim_idx:]
+    elif len(shape) == 5:
+        low_dim_shape = infer_img_axes(shape[1:])
+        return 't' + low_dim_shape
+    else:
+        raise ValueError(
+            f'Image shape {shape} is not supported. ')
+
+
+def check_img_axes(axes: str):
+    """Check if the axes of an image is valid.
+
+    Args:
+        axes: Axes of the image.
+    """
+    if len(axes) < 2 or len(axes) > 5:
+        raise ValueError(
+            f'Axes {axes} is not supported. ')
+    if len(axes) != len(set(axes)):
+        raise ValueError(
+            f'Axes {axes} must be unique. ')
+    if 'y' not in axes:
+        raise ValueError(
+            f'Axes {axes} must contain y. ')
+    if 'x' not in axes:
+        raise ValueError(
+            f'Axes {axes} must contain x. ')
+
+
+def expand_df_axes(
+        df: pd.DataFrame, axes: str,
+        axes_vals: T.Sequence[int],
+        ) -> pd.DataFrame:
+    """Expand the axes of a DataFrame."""
+    # insert new columns
+    for i, vals in enumerate(axes_vals):
+        df.insert(i, axes[i], vals)
+    df.columns = list(axes)
+    return df
+
+
+def map_predfunc_to_img(
+        predfunc: T.Callable[
+            [np.ndarray],
+            T.Tuple[pd.DataFrame, np.ndarray]
+        ],
+        img: np.ndarray,
+        axes: str,
+        ):
+    from .log import logger
+    yx_idx = [axes.index(c) for c in 'yx']
+    # move yx to the last two axes
+    img = np.moveaxis(img, yx_idx, [-2, -1])
+    df_axes = axes.replace('y', '').replace('x', '') + 'yx'
+    dfs = []
+    if len(img.shape) in (2, 3):
+        df, e_img = predfunc(img)
+        df = expand_df_axes(df, df_axes, [])
+        dfs.append(df)
+    elif len(img.shape) == 4:
+        e_img = np.zeros_like(img, dtype=np.float32)
+        for i, img_3d in enumerate(img):
+            logger.info(f'Processing image {i+1}/{len(img)}')
+            df, e_img[i] = predfunc(img_3d)
+            df = expand_df_axes(df, df_axes, [i])
+            dfs.append(df)
+    else:
+        assert len(img.shape) == 5
+        e_img = np.zeros_like(img, dtype=np.float32)
+        num_imgs = img.shape[0] * img.shape[1]
+        for i, img_4d in enumerate(img):
+            for j, img_3d in enumerate(img_4d):
+                logger.info(
+                    f'Processing image {i*img.shape[1]+j+1}/{num_imgs}')
+                df, e_img[i, j] = predfunc(img_3d)
+                df = expand_df_axes(df, df_axes, [i, j])
+                dfs.append(df)
+    # move yx back to the original position
+    e_img = np.moveaxis(e_img, [-2, -1], yx_idx)
+    res_df = pd.concat(dfs, ignore_index=True)
+    # re-order columns
+    res_df = res_df[list(axes)]
+    res_df.columns = [f'axis-{i}' for i in range(len(axes))]
+    return res_df, e_img

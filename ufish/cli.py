@@ -164,21 +164,24 @@ class UFishCLI():
         pred_df.to_csv(output_csv_path, index=False)
         logger.info(f'Saved predicted spots to {output_csv_path}')
 
-    def pred_2d_img(
+    def predict(
             self,
             input_img_path: str,
             output_csv_path: str,
             enhanced_output_path: T.Optional[str] = None,
-            connectivity: int = 2,
+            axes: T.Optional[str] = None,
             intensity_threshold: float = 0.5,
             ):
-        """Predict spots in a 2d image.
+        """Predict spots in image.
 
         Args:
             input_img_path: Path to the input image.
             output_csv_path: Path to the output csv file.
             enhanced_output_path: Path to the enhanced image.
-            connectivity: The connectivity for finding local maxima.
+            axes: The axes of the image.
+                For example, 'czxy' for a 4D image,
+                'yx' for a 2D image.
+                If None, will try to infer the axes from the shape.
             intensity_threshold: The threshold for the intensity.
         """
         from skimage.io import imread, imsave
@@ -186,18 +189,17 @@ class UFishCLI():
             self.load_weights()
         logger.info(f'Predicting {input_img_path}')
         img = imread(input_img_path)
-        pred_df, enhanced = self._ufish.pred_2d(
-            img,
-            connectivity=connectivity,
+        pred_df, enhanced = self._ufish.predict(
+            img, axes=axes,
             intensity_threshold=intensity_threshold,
-            return_enhanced_img=True)
+        )
         pred_df.to_csv(output_csv_path, index=False)
         logger.info(f'Saved predicted spots to {output_csv_path}')
         if enhanced_output_path is not None:
             imsave(enhanced_output_path, enhanced, check_contrast=False)
             logger.info(f'Saved enhanced image to {enhanced_output_path}')
 
-    def pred_2d_imgs(
+    def predict_imgs(
             self,
             input_path: str,
             output_dir: str,
