@@ -235,16 +235,14 @@ class RandomRotation:
         image, target = sample['image'], sample['target']
         angle = random.uniform(self.angle_range[0], self.angle_range[1])
         image = ndi.rotate(
-            image, angle, axes=(1, 2),
-            mode='reflect', order=1, reshape=False)
+            image, angle, axes=(1, 2), order=1, reshape=False)
         target = ndi.rotate(
-            target, angle, axes=(1, 2),
-            mode='reflect', order=1, reshape=False)
+            target, angle, axes=(1, 2), order=1, reshape=False)
         return {'image': image, 'target': target}
 
 
 class RandomTranslation:
-    def __init__(self, p=0.5, shift_range=(-5, 5)):
+    def __init__(self, p=0.5, shift_range=(-256, 256)):
         self.p = p
         self.shift_range = shift_range
 
@@ -252,11 +250,12 @@ class RandomTranslation:
         if random.random() > self.p:
             return sample
         image, target = sample['image'], sample['target']
-        shift = random.uniform(self.shift_range[0], self.shift_range[1])
+        shift_y = random.uniform(self.shift_range[0], self.shift_range[1])
+        shift_x = random.uniform(self.shift_range[0], self.shift_range[1])
         image = ndi.shift(
-            image, shift, mode='reflect', order=1)
+            image, (0, shift_y, shift_x), cval=0.0)
         target = ndi.shift(
-            target, shift, mode='reflect', order=1)
+            target, (0, shift_y, shift_x), cval=0.0)
         return {'image': image, 'target': target}
 
 
@@ -280,8 +279,8 @@ class GaussianNoise:
 class SaltAndPepperNoise:
     def __init__(
             self, p=0.5,
-            salt_range=(0, 0.1),
-            pepper_range=(0, 0.1)):
+            salt_range=(0, 1e-4),
+            pepper_range=(0, 1e-4)):
         self.p = p
         self.salt_range = salt_range
         self.pepper_range = pepper_range
