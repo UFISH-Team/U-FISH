@@ -17,37 +17,14 @@ class ConvBlock(nn.Module):
         return out
 
 
-class ResidualBlock(nn.Module):
-    def __init__(self, channels):
-        super(ResidualBlock, self).__init__()
-        self.conv1 = nn.Conv2d(
-            channels, channels, kernel_size=1, padding=0)
-        self.conv2 = nn.Conv2d(
-            channels, channels, kernel_size=3, padding=1)
-        self.BN1 = nn.BatchNorm2d(channels)
-        self.BN2 = nn.BatchNorm2d(channels)
-
-    def forward(self, x):
-        out = self.conv1(x)
-        out = self.BN1(out)
-        out = F.relu(out)
-        out = self.conv2(out)
-        out = self.BN2(out)
-        out = F.relu(out)
-        out = out + x
-        return out
-
-
 class DownConv(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(DownConv, self).__init__()
         self.down_conv = nn.Conv2d(
             in_channels, out_channels, kernel_size=3, stride=2, padding=1)
-        self.conv = ResidualBlock(out_channels)
 
     def forward(self, x):
         out = self.down_conv(x)
-        out = self.conv(out)
         return out
 
 
@@ -123,19 +100,21 @@ class EncoderBlock(nn.Module):
 class DecoderBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(DecoderBlock, self).__init__()
+        self.cbam = CBAM(in_channels)
         self.conv = ConvBlock(in_channels, out_channels)
 
     def forward(self, x):
-        out = self.conv(x)
+        out = self.cbam(x)
+        out = self.conv(out)
         return out
 
 
 class BottoleneckBlock(nn.Module):
     def __init__(self, channels):
         super(BottoleneckBlock, self).__init__()
-        self.conv1 = ResidualBlock(channels)
+        self.conv1 = ConvBlock(channels, channels)
         self.cbam = CBAM(channels)
-        self.conv2 = ResidualBlock(channels)
+        self.conv2 = ConvBlock(channels, channels)
 
     def forward(self, x):
         out = self.conv1(x)
@@ -159,7 +138,7 @@ class FinalDecoderBlock(nn.Module):
 class UNet(nn.Module):
     def __init__(
             self, in_channels=1, out_channels=1,
-            channel_numbers=[32, 16, 16]):
+            channel_numbers=[32, 32, 32]):
         super(UNet, self).__init__()
         self.encoders = nn.ModuleList()
         self.downsamples = nn.ModuleList()
