@@ -297,14 +297,14 @@ class UFish():
     def call_spots_local_maxima(
             self, enhanced_img: np.ndarray,
             connectivity: int = 2,
-            intensity_threshold: float = 0.5,
+            p_threshold: float = 0.5,
             ) -> pd.DataFrame:
         """Call spots by finding the local maxima.
 
         Args:
             enhanced_img: The enhanced image.
             connectivity: The connectivity for the local maxima.
-            intensity_threshold: The threshold for the intensity.
+            p_threshold: The threshold for the intensity.
 
         Returns:
             A pandas dataframe containing the spots.
@@ -312,7 +312,7 @@ class UFish():
         assert enhanced_img.ndim in (2, 3), 'Image must be 2D or 3D.'
         from skimage.morphology import local_maxima
         mask = local_maxima(enhanced_img, connectivity=connectivity)
-        mask = mask & (enhanced_img > intensity_threshold)
+        mask = mask & (enhanced_img > p_threshold)
         peaks = np.array(np.where(mask)).T
         df = pd.DataFrame(
             peaks, columns=[f'axis-{i}' for i in range(mask.ndim)])
@@ -320,7 +320,7 @@ class UFish():
 
     def _pred_2d_or_3d(
             self, img: np.ndarray,
-            intensity_threshold: float = 0.5,
+            p_threshold: float = 0.5,
             batch_size: int = 4,
             ) -> T.Tuple[pd.DataFrame, np.ndarray]:
         """Predict the spots in a 2D or 3D image. """
@@ -328,7 +328,7 @@ class UFish():
         enhanced_img = self.enhance_img(img, batch_size=batch_size)
         df = self.call_spots_local_maxima(
             enhanced_img, connectivity=2,
-            intensity_threshold=intensity_threshold,
+            p_threshold=p_threshold,
         )
         return df, enhanced_img
 
@@ -342,7 +342,7 @@ class UFish():
     def predict(
             self, img: np.ndarray,
             axes: T.Optional[str] = None,
-            intensity_threshold: float = 0.5,
+            p_threshold: float = 0.5,
             batch_size: int = 4,
             ) -> T.Tuple[pd.DataFrame, np.ndarray]:
         """Predict the spots in an image.
@@ -356,7 +356,7 @@ class UFish():
                 For example, 'czxy' for a 4D image,
                 'yx' for a 2D image.
                 If None, will try to infer the axes from the shape.
-            intensity_threshold: The threshold for the intensity.
+            p_threshold: The threshold for the intensity.
             batch_size: The batch size for inference.
                 Used only when the image dimension is 3 or higher.
         """
@@ -370,7 +370,7 @@ class UFish():
         check_img_axes(axes)
         predfunc = partial(
             self._pred_2d_or_3d,
-            intensity_threshold=intensity_threshold,
+            p_threshold=p_threshold,
             batch_size=batch_size)
         df, enhanced_img = map_predfunc_to_img(
             predfunc, img, axes)
@@ -380,7 +380,7 @@ class UFish():
             self,
             img: np.ndarray,
             axes: T.Optional[str] = None,
-            intensity_threshold: float = 0.5,
+            p_threshold: float = 0.5,
             batch_size: int = 4,
             chunk_size: T.Optional[T.Tuple[int, ...]] = None,
             ):

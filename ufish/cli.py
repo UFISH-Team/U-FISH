@@ -144,7 +144,7 @@ class UFishCLI():
             enhanced_img_path: str,
             output_csv_path: str,
             connectivity: int = 2,
-            intensity_threshold: float = 0.5,
+            p_threshold: float = 0.5,
             ):
         """Call spots by finding local maxima.
 
@@ -152,18 +152,18 @@ class UFishCLI():
             enhanced_img_path: Path to the enhanced image.
             output_csv_path: Path to the output csv file.
             connectivity: The connectivity for finding local maxima.
-            intensity_threshold: The threshold for the intensity.
+            p_threshold: The threshold for the intensity.
         """
         from skimage.io import imread
         img = imread(enhanced_img_path)
         logger.info(f'Calling spots in {enhanced_img_path}')
         logger.info(
             f'Parameters: connectivity={connectivity}, ' +
-            f'intensity_threshold={intensity_threshold}')
+            f'p_threshold={p_threshold}')
         pred_df = self._ufish.call_spots_local_maxima(
             img,
             connectivity=connectivity,
-            intensity_threshold=intensity_threshold)
+            p_threshold=p_threshold)
         pred_df.to_csv(output_csv_path, index=False)
         logger.info(f'Saved predicted spots to {output_csv_path}')
 
@@ -173,7 +173,7 @@ class UFishCLI():
             output_csv_path: str,
             enhanced_output_path: T.Optional[str] = None,
             axes: T.Optional[str] = None,
-            intensity_threshold: float = 0.5,
+            p_threshold: float = 0.5,
             ):
         """Predict spots in image.
 
@@ -185,7 +185,7 @@ class UFishCLI():
                 For example, 'czxy' for a 4D image,
                 'yx' for a 2D image.
                 If None, will try to infer the axes from the shape.
-            intensity_threshold: The threshold for the intensity.
+            p_threshold: The threshold for the intensity.
         """
         from skimage.io import imread, imsave
         if not self._weights_loaded:
@@ -194,7 +194,7 @@ class UFishCLI():
         img = imread(input_img_path)
         pred_df, enhanced = self._ufish.predict(
             img, axes=axes,
-            intensity_threshold=intensity_threshold,
+            p_threshold=p_threshold,
         )
         pred_df.to_csv(output_csv_path, index=False)
         logger.info(f'Saved predicted spots to {output_csv_path}')
@@ -209,7 +209,7 @@ class UFishCLI():
             data_base_dir: T.Optional[str] = None,
             img_glob: T.Optional[str] = None,
             save_enhanced_img: bool = True,
-            intensity_threshold: float = 0.1,
+            p_threshold: float = 0.5,
             ):
         """Predict spots in a directory of 2d images.
 
@@ -221,7 +221,7 @@ class UFishCLI():
                 Only used when input_path is a meta csv file.
             img_glob: The glob pattern for the images.
             save_enhanced_img: Whether to save the enhanced image.
-            intensity_threshold: The threshold for the intensity.
+            p_threshold: The threshold for the intensity.
         """
         if not self._weights_loaded:
             self.load_weights()
@@ -253,14 +253,14 @@ class UFishCLI():
                 self.call_spots_local_maxima(
                     str(enhanced_img_path),
                     str(output_path),
-                    intensity_threshold=intensity_threshold,
+                    p_threshold=p_threshold,
                 )
             else:
                 self.predict(
                     str(in_path),
                     str(output_path),
                     str(enhanced_img_path) if save_enhanced_img else None,
-                    intensity_threshold=intensity_threshold,
+                    p_threshold=p_threshold,
                 )
 
     def plot_2d_pred(
