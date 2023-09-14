@@ -162,3 +162,65 @@ def map_predfunc_to_img(
     res_df = res_df[list(axes)]
     res_df.columns = [f'axis-{i}' for i in range(len(axes))]
     return res_df, e_img
+
+
+def get_default_chunk_size(
+        axes: str,
+        default_xy: int = 512,
+        default_z: int = 1,
+        default_c: int = 1,
+        default_t: int = 1,
+        ) -> tuple:
+    """Get the default chunk size of an image.
+
+    Args:
+        axes: Axes of the image.
+        default_xy: Default chunk size for x and y axes.
+        default_z: Default chunk size for z axis.
+        default_c: Default chunk size for c axis.
+        default_t: Default chunk size for t axis.
+    """
+    chunk_size = []
+    for c in axes:
+        if c == 'x' or c == 'y':
+            chunk_size.append(default_xy)
+        elif c == 'z':
+            chunk_size.append(default_z)
+        elif c == 'c':
+            chunk_size.append(default_c)
+        elif c == 't':
+            chunk_size.append(default_t)
+        else:
+            raise ValueError(
+                f'Axis {c} is not supported. ')
+    return tuple(chunk_size)
+
+
+def get_chunks_range(
+        img_shape: tuple,
+        chunk_size: tuple,
+        ) -> T.List[T.List[T.List[int]]]:
+    """Get the ranges of each chunk.
+    For example, if the image shape is (100, 100)
+    and the chunk size is (50, 50), then the ranges
+    of the chunks are: [
+        [[0, 50], [0, 50]],
+        [[0, 50], [50, 100]],
+        [[50, 100], [0, 50]],
+        [[50, 100], [50, 100]],
+    ]
+
+    Args:
+        img_shape: Shape of the image.
+        chunk_size: Chunk size of the image.
+    """
+    # TODO
+    chunk_ranges = []
+    for i, (dim_size, chunk_dim_size) in enumerate(zip(img_shape, chunk_size)):
+        num_chunks = int(np.ceil(dim_size / chunk_dim_size))
+        chunk_ranges.append([])
+        for j in range(num_chunks):
+            start = j * chunk_dim_size
+            end = min((j + 1) * chunk_dim_size, dim_size)
+            chunk_ranges[i].append([start, end])
+    return chunk_ranges

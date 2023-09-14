@@ -332,6 +332,13 @@ class UFish():
         )
         return df, enhanced_img
 
+    def _infer_axes(self, img: np.ndarray):
+        from .utils.misc import infer_img_axes
+        logger.info("Axes not specified, infering from image shape.")
+        axes = infer_img_axes(img.shape)
+        logger.info(f"Infered axes: {axes}, image shape: {img.shape}")
+        return axes
+
     def predict(
             self, img: np.ndarray,
             axes: T.Optional[str] = None,
@@ -354,14 +361,12 @@ class UFish():
                 Used only when the image dimension is 3 or higher.
         """
         from .utils.misc import (
-            infer_img_axes, check_img_axes,
+            check_img_axes,
             map_predfunc_to_img
         )
         from functools import partial
         if axes is None:
-            logger.info("Axes not specified, infering from image shape.")
-            axes = infer_img_axes(img.shape)
-            logger.info(f"Infered axes: {axes}, image shape: {img.shape}")
+            axes = self._infer_axes(img)
         check_img_axes(axes)
         predfunc = partial(
             self._pred_2d_or_3d,
@@ -370,6 +375,25 @@ class UFish():
         df, enhanced_img = map_predfunc_to_img(
             predfunc, img, axes)
         return df, enhanced_img
+
+    def predict_chunks(
+            self,
+            img: np.ndarray,
+            axes: T.Optional[str] = None,
+            intensity_threshold: float = 0.5,
+            batch_size: int = 4,
+            chunk_size: T.Optional[T.Tuple[int, ...]] = None,
+            ):
+        from .utils.misc import check_img_axes
+        if axes is None:
+            axes = self._infer_axes(img)
+        check_img_axes(axes)
+        if chunk_size is None:
+            from .utils.misc import get_default_chunk_size
+            chunk_size = get_default_chunk_size(axes)
+        assert len(chunk_size) == len(axes), \
+            "chunk_size and axes must have the same length"
+        # TODO
 
     def evaluate_result_dp(
             self,
