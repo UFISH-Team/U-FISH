@@ -1,6 +1,8 @@
 import typing as T
 import numpy as np
 import pandas as pd
+from itertools import product
+
 from skimage.exposure import rescale_intensity
 
 
@@ -218,15 +220,16 @@ def get_chunks_range(
         img_shape: Shape of the image.
         chunk_size: Chunk size of the image.
     """
-    # TODO
-    chunk_ranges = []
-    for i, (dim_size, chunk_dim_size) in enumerate(zip(img_shape, chunk_size)):
+    ranges_each_dim = []
+    for dim_size, chunk_dim_size in zip(img_shape, chunk_size):
         num_chunks = int(np.ceil(dim_size / chunk_dim_size))
-        chunk_ranges.append([])
+        dim_ranges = []
         for j in range(num_chunks):
             start = j * chunk_dim_size
             end = min((j + 1) * chunk_dim_size, dim_size)
-            chunk_ranges[i].append([start, end])
+            dim_ranges.append([start, end])
+        ranges_each_dim.append(dim_ranges)
+    chunk_ranges = list(product(*ranges_each_dim))
     return chunk_ranges
 
 

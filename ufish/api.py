@@ -389,7 +389,6 @@ class UFish():
             self,
             img: np.ndarray,
             axes: T.Optional[str] = None,
-            p_threshold: float = 0.5,
             batch_size: int = 4,
             chunk_size: T.Optional[T.Tuple[int, ...]] = None,
             ):
