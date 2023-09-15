@@ -2,6 +2,7 @@ import os
 import time
 import typing as T
 from pathlib import Path
+from functools import partial
 
 import numpy as np
 import pandas as pd
@@ -244,18 +245,6 @@ class UFish():
         output = ort_outs[0]
         return output
 
-    def enhance_img(self, img: np.ndarray, batch_size: int = 4) -> np.ndarray:
-        """Enhance the image using the U-Net model."""
-        from .utils.misc import scale_image
-        img = scale_image(img, warning=True)
-        if img.ndim == 2:
-            output = self._enhance_img2d(img)
-        elif img.ndim == 3:
-            output = self._enhance_img3d(img, batch_size=batch_size)
-        else:
-            raise ValueError('Image must be 2D or 3D.')
-        return output
-
     def _enhance_img2d(self, img: np.ndarray) -> np.ndarray:
         """Enhance a 2D image."""
         output = self.infer(img[np.newaxis, np.newaxis])[0, 0]
@@ -264,79 +253,89 @@ class UFish():
     def _enhance_img3d(
             self, img: np.ndarray, batch_size: int = 4) -> np.ndarray:
         """Enhance a 3D image."""
-        output = np.zeros_like(img)
+        output = np.zeros_like(img, dtype=np.float32)
         for i in range(0, output.shape[0], batch_size):
             _slice = img[i:i+batch_size][:, np.newaxis]
             output[i:i+batch_size] = self.infer(_slice)[:, 0]
         return output
 
-    def call_spots_cc_center(
-            self, enhanced_img: np.ndarray,
-            binary_threshold: T.Union[str, float] = 'otsu',
-            cc_size_thresh: int = 20,
+    def _enhance_2d_or_3d(
+            self,
+            img: np.ndarray,
+            axes: str,
+            batch_size: int = 4,
+            blend_3d: bool = False,
+            ) -> np.ndarray:
+        """Enhance a 2D or 3D image."""
+        from .utils.misc import scale_image
+        img = scale_image(img, warning=True)
+        if img.ndim == 2:
+            output = self._enhance_img2d(img)
+        elif img.ndim == 3:
+            if blend_3d:
+                if 'z' not in axes:
+                    logger.warning(
+                        'Image does not have a z axis, ' +
+                        'cannot blend along z axis.')
+                from .utils.misc import enhance_blend_3d
+                enh_func = partial(
+                    self._enhance_img3d, batch_size=batch_size)
+                output = enhance_blend_3d(
+                    img, enh_func, axes=axes)
+            else:
+                output = self._enhance_img3d(img, batch_size=batch_size)
+        else:
+            raise ValueError('Image must be 2D or 3D.')
+        return output
+
+    def call_spots(
+            self,
+            enhanced_img: np.ndarray,
+            method: str = 'local_maxima',
+            **kwargs,
             ) -> pd.DataFrame:
-        """Call spots by finding the connected components' centroids.
+        """Call spots from enhanced image.
 
         Args:
             enhanced_img: The enhanced image.
-            binary_threshold: The threshold for binarizing the image.
-            cc_size_thresh: Connected component size threshold.
-
-        Returns:
-            A pandas dataframe containing the spots.
+            method: The method to use for spot calling.
+            kwargs: Other arguments for the spot calling function.
         """
         assert enhanced_img.ndim in (2, 3), 'Image must be 2D or 3D.'
-        from .calling import call_spots_cc_center
-        df = call_spots_cc_center(
-            enhanced_img,
-            cc_size_threshold=cc_size_thresh,
-            binary_threshold=binary_threshold,
-        )
-        return df
-
-    def call_spots_local_maxima(
-            self, enhanced_img: np.ndarray,
-            connectivity: int = 2,
-            intensity_threshold: float = 0.5,
-            ) -> pd.DataFrame:
-        """Call spots by finding the local maxima.
-
-        Args:
-            enhanced_img: The enhanced image.
-            connectivity: The connectivity for the local maxima.
-            intensity_threshold: The threshold for the intensity.
-
-        Returns:
-            A pandas dataframe containing the spots.
-        """
-        assert enhanced_img.ndim in (2, 3), 'Image must be 2D or 3D.'
-        from skimage.morphology import local_maxima
-        mask = local_maxima(enhanced_img, connectivity=connectivity)
-        mask = mask & (enhanced_img > intensity_threshold)
-        peaks = np.array(np.where(mask)).T
-        df = pd.DataFrame(
-            peaks, columns=[f'axis-{i}' for i in range(mask.ndim)])
+        if method == 'cc_center':
+            from .utils.spot_calling import call_spots_cc_center as call_func
+        else:
+            from .utils.spot_calling import call_spots_local_maxima as call_func  # noqa
+        df = call_func(enhanced_img, **kwargs)
         return df
 
     def _pred_2d_or_3d(
-            self, img: np.ndarray,
-            intensity_threshold: float = 0.5,
+            self, img: np.ndarray, axes: str,
+            blend_3d: bool = False,
             batch_size: int = 4,
+            spots_calling_method: str = 'local_maxima',
+            **kwargs,
             ) -> T.Tuple[pd.DataFrame, np.ndarray]:
         """Predict the spots in a 2D or 3D image. """
         assert img.ndim in (2, 3), 'Image must be 2D or 3D.'
-        enhanced_img = self.enhance_img(img, batch_size=batch_size)
-        df = self.call_spots_local_maxima(
-            enhanced_img, connectivity=2,
-            intensity_threshold=intensity_threshold,
+        enhanced_img = self._enhance_2d_or_3d(
+            img, axes,
+            batch_size=batch_size,
+            blend_3d=(blend_3d and ('z' in axes))
         )
+        df = self.call_spots(
+            enhanced_img,
+            method=spots_calling_method,
+            **kwargs)
         return df, enhanced_img
 
     def predict(
             self, img: np.ndarray,
             axes: T.Optional[str] = None,
-            intensity_threshold: float = 0.5,
+            blend_3d: bool = True,
             batch_size: int = 4,
+            spots_calling_method: str = 'local_maxima',
+            **kwargs,
             ) -> T.Tuple[pd.DataFrame, np.ndarray]:
         """Predict the spots in an image.
 
@@ -349,24 +348,32 @@ class UFish():
                 For example, 'czxy' for a 4D image,
                 'yx' for a 2D image.
                 If None, will try to infer the axes from the shape.
-            intensity_threshold: The threshold for the intensity.
+            blend_3d: Whether to blend the 3D image.
+                Used only when the image contains a z axis.
+                If True, will blend the 3D enhanced images along
+                the z, y, x axes.
             batch_size: The batch size for inference.
                 Used only when the image dimension is 3 or higher.
+            spots_calling_method: The method to use for spot calling.
+            kwargs: Other arguments for the spot calling function.
         """
         from .utils.misc import (
             infer_img_axes, check_img_axes,
             map_predfunc_to_img
         )
-        from functools import partial
         if axes is None:
             logger.info("Axes not specified, infering from image shape.")
             axes = infer_img_axes(img.shape)
             logger.info(f"Infered axes: {axes}, image shape: {img.shape}")
-        check_img_axes(axes)
+        check_img_axes(img, axes)
         predfunc = partial(
             self._pred_2d_or_3d,
-            intensity_threshold=intensity_threshold,
-            batch_size=batch_size)
+            axes=axes,
+            blend_3d=blend_3d,
+            batch_size=batch_size,
+            spots_calling_method=spots_calling_method,
+            **kwargs,
+            )
         df, enhanced_img = map_predfunc_to_img(
             predfunc, img, axes)
         return df, enhanced_img

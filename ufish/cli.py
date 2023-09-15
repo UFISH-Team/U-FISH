@@ -95,75 +95,27 @@ class UFishCLI():
         self._weights_loaded = True
         return self
 
-    def enhance_img(
-            self,
-            input_img_path: str,
-            output_img_path: str,
-            ):
-        """Enhance an image."""
-        from skimage.io import imread, imsave
-        if not self._weights_loaded:
-            self.load_weights()
-        logger.info(f'Enhancing {input_img_path}')
-        img = imread(input_img_path)
-        enhanced = self._ufish.enhance_img(img)
-        imsave(output_img_path, enhanced, check_contrast=False)
-        logger.info(f'Saved enhanced image to {output_img_path}')
-
-    def call_spots_cc_center(
+    def call_spots(
             self,
             enhanced_img_path: str,
             output_csv_path: str,
-            binary_threshold: T.Union[str, float] = 'otsu',
-            cc_size_thresh: int = 20
-            ):
-        """Call spots by finding connected components
-        and taking the centroids.
-
-        Args:
-            enhanced_img_path: Path to the enhanced image.
-            output_csv_path: Path to the output csv file.
-            binary_threshold: The threshold for binarizing the image.
-            cc_size_thresh: Connected component size threshold.
-        """
-        from skimage.io import imread
-        img = imread(enhanced_img_path)
-        logger.info(f'Calling spots in {enhanced_img_path}')
-        logger.info(
-            f'Parameters: binary_threshold={binary_threshold}, ' +
-            f'cc_size_thresh={cc_size_thresh}')
-        pred_df = self._ufish.call_spots_cc_center(
-            img,
-            binary_threshold=binary_threshold,
-            cc_size_thresh=cc_size_thresh)
-        pred_df.to_csv(output_csv_path, index=False)
-        logger.info(f'Saved predicted spots to {output_csv_path}')
-
-    def call_spots_local_maxima(
-            self,
-            enhanced_img_path: str,
-            output_csv_path: str,
-            connectivity: int = 2,
-            intensity_threshold: float = 0.5,
+            method: str = 'local_maxima',
+            **kwargs,
             ):
         """Call spots by finding local maxima.
 
         Args:
             enhanced_img_path: Path to the enhanced image.
             output_csv_path: Path to the output csv file.
-            connectivity: The connectivity for finding local maxima.
-            intensity_threshold: The threshold for the intensity.
+            method: The method to use for calling spots.
+            kwargs: The keyword arguments for the method.
         """
         from skimage.io import imread
         img = imread(enhanced_img_path)
         logger.info(f'Calling spots in {enhanced_img_path}')
-        logger.info(
-            f'Parameters: connectivity={connectivity}, ' +
-            f'intensity_threshold={intensity_threshold}')
-        pred_df = self._ufish.call_spots_local_maxima(
-            img,
-            connectivity=connectivity,
-            intensity_threshold=intensity_threshold)
+        logger.info(f'Method: {method}, Parameters: {kwargs}')
+        pred_df = self._ufish.call_spots(
+            img, method=method, **kwargs)
         pred_df.to_csv(output_csv_path, index=False)
         logger.info(f'Saved predicted spots to {output_csv_path}')
 
@@ -173,7 +125,10 @@ class UFishCLI():
             output_csv_path: str,
             enhanced_output_path: T.Optional[str] = None,
             axes: T.Optional[str] = None,
-            intensity_threshold: float = 0.5,
+            blend_3d: bool = True,
+            batch_size: int = 4,
+            spot_calling_method: str = 'local_maxima',
+            **kwargs,
             ):
         """Predict spots in image.
 
@@ -185,7 +140,14 @@ class UFishCLI():
                 For example, 'czxy' for a 4D image,
                 'yx' for a 2D image.
                 If None, will try to infer the axes from the shape.
-            intensity_threshold: The threshold for the intensity.
+            blend_3d: Whether to blend the 3D image.
+                Used only when the image contains a z axis.
+                If True, will blend the 3D enhanced images along
+                the z, y, x axes.
+            batch_size: The batch size for inference.
+                Used only when the image dimension is 3 or higher.
+            spots_calling_method: The method to use for spot calling.
+            kwargs: Other arguments for the spot calling function.
         """
         from skimage.io import imread, imsave
         if not self._weights_loaded:
@@ -193,8 +155,10 @@ class UFishCLI():
         logger.info(f'Predicting {input_img_path}')
         img = imread(input_img_path)
         pred_df, enhanced = self._ufish.predict(
-            img, axes=axes,
-            intensity_threshold=intensity_threshold,
+            img, axes=axes, blend_3d=blend_3d,
+            batch_size=batch_size,
+            spots_calling_method=spot_calling_method,
+            **kwargs
         )
         pred_df.to_csv(output_csv_path, index=False)
         logger.info(f'Saved predicted spots to {output_csv_path}')
@@ -209,8 +173,9 @@ class UFishCLI():
             data_base_dir: T.Optional[str] = None,
             img_glob: T.Optional[str] = None,
             save_enhanced_img: bool = True,
-            connectivity: int = 2,
-            intensity_threshold: float = 0.1,
+            table_suffix: str = '.pred.csv',
+            enhanced_suffix: str = '.enhanced.tif',
+            **kwargs,
             ):
         """Predict spots in a directory of 2d images.
 
@@ -222,8 +187,9 @@ class UFishCLI():
                 Only used when input_path is a meta csv file.
             img_glob: The glob pattern for the images.
             save_enhanced_img: Whether to save the enhanced image.
-            connectivity: The connectivity for finding local maxima.
-            intensity_threshold: The threshold for the intensity.
+            table_suffix: The suffix for the output table.
+            enhanced_suffix: The suffix for the enhanced image.
+            kwargs: Other arguments for predict function.
         """
         if not self._weights_loaded:
             self.load_weights()
@@ -246,25 +212,23 @@ class UFishCLI():
         for i, in_path in enumerate(input_imgs):
             logger.info(f'({i+1}/{len(input_imgs)}) Predicting {in_path}')
             input_prefix = splitext(in_path.name)[0]
-            output_path = out_dir_path / (input_prefix + '.pred.csv')
-            enhanced_img_path = out_dir_path / (input_prefix + '.enhanced.tif')
+            output_path = out_dir_path / (input_prefix + table_suffix)
+            enhanced_img_path = out_dir_path / (input_prefix + enhanced_suffix)
             if enhanced_img_path.exists():
                 logger.info(
                     f'Enhanced image {enhanced_img_path} exists, ' +
                     'skipping enhancement.')
-                self.call_spots_local_maxima(
+                self.call_spots(
                     str(enhanced_img_path),
                     str(output_path),
-                    connectivity=connectivity,
-                    intensity_threshold=intensity_threshold,
+                    **kwargs
                 )
             else:
-                self.pred_2d_img(
+                self.predict(
                     str(in_path),
                     str(output_path),
                     str(enhanced_img_path) if save_enhanced_img else None,
-                    connectivity=connectivity,
-                    intensity_threshold=intensity_threshold,
+                    **kwargs
                 )
 
     def plot_2d_pred(

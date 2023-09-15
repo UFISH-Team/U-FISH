@@ -87,12 +87,16 @@ def infer_img_axes(shape: tuple) -> str:
             f'Image shape {shape} is not supported. ')
 
 
-def check_img_axes(axes: str):
+def check_img_axes(img: np.ndarray, axes: str):
     """Check if the axes of an image is valid.
 
     Args:
+        img: Image to check.
         axes: Axes of the image.
     """
+    if len(img.shape) != len(axes):
+        raise ValueError(
+            f'Axes {axes} does not match image shape {img.shape}. ')
     if len(axes) < 2 or len(axes) > 5:
         raise ValueError(
             f'Axes {axes} is not supported. ')
@@ -131,18 +135,18 @@ def map_predfunc_to_img(
     yx_idx = [axes.index(c) for c in 'yx']
     # move yx to the last two axes
     img = np.moveaxis(img, yx_idx, [-2, -1])
-    df_axes = axes.replace('y', '').replace('x', '') + 'yx'
+    new_axes = axes.replace('y', '').replace('x', '') + 'yx'
     dfs = []
     if len(img.shape) in (2, 3):
         df, e_img = predfunc(img)
-        df = expand_df_axes(df, df_axes, [])
+        df = expand_df_axes(df, new_axes, [])
         dfs.append(df)
     elif len(img.shape) == 4:
         e_img = np.zeros_like(img, dtype=np.float32)
         for i, img_3d in enumerate(img):
             logger.info(f'Processing image {i+1}/{len(img)}')
             df, e_img[i] = predfunc(img_3d)
-            df = expand_df_axes(df, df_axes, [i])
+            df = expand_df_axes(df, new_axes, [i])
             dfs.append(df)
     else:
         assert len(img.shape) == 5
@@ -153,7 +157,7 @@ def map_predfunc_to_img(
                 logger.info(
                     f'Processing image {i*img.shape[1]+j+1}/{num_imgs}')
                 df, e_img[i, j] = predfunc(img_3d)
-                df = expand_df_axes(df, df_axes, [i, j])
+                df = expand_df_axes(df, new_axes, [i, j])
                 dfs.append(df)
     # move yx back to the original position
     e_img = np.moveaxis(e_img, [-2, -1], yx_idx)
@@ -162,3 +166,28 @@ def map_predfunc_to_img(
     res_df = res_df[list(axes)]
     res_df.columns = [f'axis-{i}' for i in range(len(axes))]
     return res_df, e_img
+
+
+def enhance_blend_3d(
+        img: np.ndarray,
+        enh_func: T.Callable[[np.ndarray], np.ndarray],
+        axes: str,
+        ) -> np.ndarray:
+    """Run enhancement along 3 directions and blend the results.
+
+    Args:
+        enh_func: Enhancement function.
+        img: Image to enhance.
+        axes: Axes of the image.
+    """
+    if axes != 'zyx':
+        # move z to the first axis
+        z_idx = axes.index('z')
+        img = np.moveaxis(img, z_idx, 0)
+    enh_z = enh_func(img)
+    enh_y = enh_func(np.moveaxis(img, 1, 0))
+    enh_y = np.moveaxis(enh_y, 0, 1)
+    enh_x = enh_func(np.moveaxis(img, 2, 0))
+    enh_x = np.moveaxis(enh_x, 0, 2)
+    enh_img = enh_z * enh_y * enh_x
+    return enh_img
