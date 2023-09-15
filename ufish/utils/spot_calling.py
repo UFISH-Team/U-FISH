@@ -87,3 +87,26 @@ def call_spots_cc_center(
             dense_mark[len(centroids_sparse):] = True
             df['is_dense'] = dense_mark
     return df
+
+
+def call_spots_local_maxima(
+        enhanced_img: np.ndarray,
+        connectivity: int = 2,
+        intensity_threshold: float = 0.5,
+        ) -> pd.DataFrame:
+    """Call spots by finding the local maxima.
+
+    Args:
+        enhanced_img: The enhanced image.
+        connectivity: The connectivity for the local maxima.
+        intensity_threshold: The threshold for the intensity.
+
+    Returns:
+        A pandas dataframe containing the spots.
+    """
+    mask = local_maxima(enhanced_img, connectivity=connectivity)
+    mask = mask & (enhanced_img > intensity_threshold)
+    peaks = np.array(np.where(mask)).T
+    df = pd.DataFrame(
+        peaks, columns=[f'axis-{i}' for i in range(mask.ndim)])
+    return df
