@@ -389,21 +389,40 @@ class UFish():
             self,
             img: np.ndarray,
             axes: T.Optional[str] = None,
+            blend_3d: bool = True,
             batch_size: int = 4,
             chunk_size: T.Optional[T.Tuple[int, ...]] = None,
+            spots_calling_method: str = 'local_maxima',
+            **kwargs,
             ):
         from .utils.misc import (
             check_img_axes, chunks_iterator)
         if axes is None:
             axes = self._infer_axes(img)
-        check_img_axes(axes)
+        check_img_axes(img, axes)
         if chunk_size is None:
             from .utils.misc import get_default_chunk_size
             chunk_size = get_default_chunk_size(img.shape, axes)
+            logger.info(f"Chunk size not specified, using {chunk_size}.")
+        logger.info(f"Chunk size: {chunk_size}")
         assert len(chunk_size) == len(axes), \
             "chunk_size and axes must have the same length"
+        total_dfs = []
+        enh_img = np.zeros_like(img, dtype=np.float32)
         for c_range, chunk in chunks_iterator(img, chunk_size):
-            pass
+            c_df, c_enh = self.predict(
+                chunk, axes=axes, blend_3d=blend_3d,
+                batch_size=batch_size,
+                spots_calling_method=spots_calling_method,
+                **kwargs)
+            dim_start = [c_range[i][0] for i in range(len(axes))]
+            c_df += dim_start
+            total_dfs.append(c_df)
+            c_enh = c_enh[
+                tuple(slice(0, (r[1]-r[0])) for r in c_range)]
+            enh_img[tuple(slice(*r) for r in c_range)] = c_enh
+        df = pd.concat(total_dfs, ignore_index=True)
+        return df, enh_img
 
     def evaluate_result_dp(
             self,

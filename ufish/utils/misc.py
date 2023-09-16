@@ -208,7 +208,7 @@ def get_default_chunk_size(
         if default_size == 'image':
             return dim_size
         else:
-            return default_size
+            return min(default_size, dim_size)
     for c in axes:
         if c in default_sizes:
             default_size = default_sizes[c]

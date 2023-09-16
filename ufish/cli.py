@@ -124,6 +124,8 @@ class UFishCLI():
             input_img_path: str,
             output_csv_path: str,
             enhanced_output_path: T.Optional[str] = None,
+            chunking: bool = True,
+            chunk_size: T.Optional[T.Tuple[int, ...]] = None,
             axes: T.Optional[str] = None,
             blend_3d: bool = True,
             batch_size: int = 4,
@@ -136,6 +138,8 @@ class UFishCLI():
             input_img_path: Path to the input image.
             output_csv_path: Path to the output csv file.
             enhanced_output_path: Path to the enhanced image.
+            chunking: Whether to use chunking for inference.
+            chunk_size: The chunk size for inference.
             axes: The axes of the image.
                 For example, 'czxy' for a 4D image,
                 'yx' for a 2D image.
@@ -154,12 +158,19 @@ class UFishCLI():
             self.load_weights()
         logger.info(f'Predicting {input_img_path}')
         img = imread(input_img_path)
-        pred_df, enhanced = self._ufish.predict(
-            img, axes=axes, blend_3d=blend_3d,
-            batch_size=batch_size,
-            spots_calling_method=spot_calling_method,
-            **kwargs
-        )
+        if chunking:
+            pred_df, enhanced = self._ufish.predict_chunks(
+                img, axes=axes, blend_3d=blend_3d,
+                batch_size=batch_size,
+                chunk_size=chunk_size,
+                spots_calling_method=spot_calling_method,
+                **kwargs)
+        else:
+            pred_df, enhanced = self._ufish.predict(
+                img, axes=axes, blend_3d=blend_3d,
+                batch_size=batch_size,
+                spots_calling_method=spot_calling_method,
+                **kwargs)
         pred_df.to_csv(output_csv_path, index=False)
         logger.info(f'Saved predicted spots to {output_csv_path}')
         if enhanced_output_path is not None:
