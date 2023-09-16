@@ -171,31 +171,49 @@ def map_predfunc_to_img(
 
 
 def get_default_chunk_size(
+        img_shape: tuple,
         axes: str,
-        default_xy: int = 512,
-        default_z: int = 1,
-        default_c: int = 1,
-        default_t: int = 1,
+        default_x: T.Union[int, str] = 512,
+        default_y: T.Union[int, str] = 512,
+        default_z: T.Union[int, str] = 'image',
+        default_c: T.Union[int, str] = 1,
+        default_t: T.Union[int, str] = 1,
         ) -> tuple:
     """Get the default chunk size of an image.
 
     Args:
+        img_shape: Shape of the image.
         axes: Axes of the image.
-        default_xy: Default chunk size for x and y axes.
+        default_x: Default chunk size for x axis.
+            'image' means the whole image.
+        default_y: Default chunk size for y axis.
+            'image' means the whole image.
         default_z: Default chunk size for z axis.
+            'image' means the whole image.
         default_c: Default chunk size for c axis.
+            'image' means the whole image.
         default_t: Default chunk size for t axis.
+            'image' means the whole image.
     """
+    default_sizes = {
+        'y': default_y,
+        'x': default_x,
+        'z': default_z,
+        'c': default_c,
+        't': default_t,
+    }
     chunk_size = []
+
+    def get_default_size(default_size, dim_size):
+        if default_size == 'image':
+            return dim_size
+        else:
+            return default_size
     for c in axes:
-        if c == 'x' or c == 'y':
-            chunk_size.append(default_xy)
-        elif c == 'z':
-            chunk_size.append(default_z)
-        elif c == 'c':
-            chunk_size.append(default_c)
-        elif c == 't':
-            chunk_size.append(default_t)
+        if c in default_sizes:
+            default_size = default_sizes[c]
+            dim_size = img_shape[axes.index(c)]
+            chunk_size.append(get_default_size(default_size, dim_size))
         else:
             raise ValueError(
                 f'Axis {c} is not supported. ')
@@ -231,6 +249,35 @@ def get_chunks_range(
         ranges_each_dim.append(dim_ranges)
     chunk_ranges = list(product(*ranges_each_dim))
     return chunk_ranges
+
+
+def chunks_iterator(
+        original_img: np.ndarray,
+        chunk_size: tuple,
+        padding: bool = True,
+        ) -> T.Iterator[
+            T.Tuple[T.List[T.List[int]],
+                    np.ndarray]]:
+    """Iterate over chunks of an image.
+
+    Args:
+        original_img: Image to iterate over.
+        chunk_size: Chunk size of the image.
+    """
+    chunk_ranges = get_chunks_range(
+        original_img.shape, chunk_size)
+    for chunk_range in chunk_ranges:
+        chunk = original_img[
+            tuple(slice(*r) for r in chunk_range)]
+        if padding:
+            chunk = np.pad(
+                chunk,
+                [(0, chunk_size[i] - (r[1] - r[0]))
+                 for i, r in enumerate(chunk_range)],
+                mode='constant',
+                constant_values=0,
+            )
+        yield chunk_range, chunk
 
 
 def enhance_blend_3d(

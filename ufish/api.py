@@ -392,16 +392,18 @@ class UFish():
             batch_size: int = 4,
             chunk_size: T.Optional[T.Tuple[int, ...]] = None,
             ):
-        from .utils.misc import check_img_axes
+        from .utils.misc import (
+            check_img_axes, chunks_iterator)
         if axes is None:
             axes = self._infer_axes(img)
         check_img_axes(axes)
         if chunk_size is None:
             from .utils.misc import get_default_chunk_size
-            chunk_size = get_default_chunk_size(axes)
+            chunk_size = get_default_chunk_size(img.shape, axes)
         assert len(chunk_size) == len(axes), \
             "chunk_size and axes must have the same length"
-        # TODO
+        for c_range, chunk in chunks_iterator(img, chunk_size):
+            pass
 
     def evaluate_result_dp(
             self,
