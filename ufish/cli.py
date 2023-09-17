@@ -153,23 +153,30 @@ class UFishCLI():
             spots_calling_method: The method to use for spot calling.
             kwargs: Other arguments for the spot calling function.
         """
+        import numpy as np
+        import zarr
         from skimage.io import imread, imsave
-        from zarr import open as zarr_open
         if not self._weights_loaded:
             self.load_weights()
         logger.info(f'Predicting {input_img_path}')
         if input_img_path.endswith('.zarr'):
-            img = zarr_open(input_img_path, 'r')
+            img = zarr.open(input_img_path, 'r')
+        elif input_img_path.endswith('.n5'):
+            store = zarr.N5Store(input_img_path)
+            img = zarr.open(store, 'r')
         else:
             img = imread(input_img_path)
         if chunking:
             if enhanced_output_path is not None:
                 if enhanced_output_path.endswith('.zarr'):
-                    logger.info("Saving enhanced image to zarr file.")
-                    import numpy as np
-                    enhanced = zarr_open(
+                    enhanced = zarr.open(
                         enhanced_output_path, 'w',
                         shape=img.shape, dtype=np.float32)
+                elif enhanced_output_path.endswith('.n5'):
+                    store = zarr.N5Store(enhanced_output_path)
+                    enhanced = zarr.zeros(
+                        img.shape, dtype=np.float32,
+                        store=store, overwrite=True)
             pred_df, enhanced = self._ufish.predict_chunks(
                 img, enh_img=enhanced,
                 axes=axes, blend_3d=blend_3d,
@@ -186,7 +193,11 @@ class UFishCLI():
         pred_df.to_csv(output_csv_path, index=False)
         logger.info(f'Saved predicted spots to {output_csv_path}')
         if enhanced_output_path is not None:
-            if not enhanced_output_path.endswith('.zarr'):
+            if enhanced_output_path.endswith('.zarr'):
+                logger.info("Saving enhanced image to zarr file.")
+            elif enhanced_output_path.endswith('.n5'):
+                logger.info("Saving enhanced image to n5 file.")
+            else:
                 imsave(enhanced_output_path, enhanced, check_contrast=False)
             logger.info(f'Saved enhanced image to {enhanced_output_path}')
 
