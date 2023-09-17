@@ -159,7 +159,12 @@ class UFishCLI():
         if not self._weights_loaded:
             self.load_weights()
         logger.info(f'Predicting {input_img_path}')
-        if input_img_path.endswith('.zarr'):
+        if input_img_path.endswith('.ngff') or \
+                input_img_path.endswith('.ngff.zarr') or \
+                input_img_path.endswith('.ome.zarr'):
+            from .utils.ngff import read_ngff
+            img = read_ngff(input_img_path)
+        elif input_img_path.endswith('.zarr'):
             img = zarr.open(input_img_path, 'r')
         elif input_img_path.endswith('.n5'):
             store = zarr.N5Store(input_img_path)

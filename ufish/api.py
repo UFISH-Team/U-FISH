@@ -217,6 +217,8 @@ class UFish():
 
     def infer(self, img: np.ndarray) -> np.ndarray:
         """Infer the image using the U-Net model."""
+        if not isinstance(img, np.ndarray):
+            img = np.array(img)
         if self.ort_session is not None:
             output = self._infer_onnx(img)
         elif self.model is not None:
