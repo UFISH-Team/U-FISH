@@ -388,6 +388,7 @@ class UFish():
     def predict_chunks(
             self,
             img: np.ndarray,
+            enh_img: T.Optional[np.ndarray] = None,
             axes: T.Optional[str] = None,
             blend_3d: bool = True,
             batch_size: int = 4,
@@ -408,7 +409,8 @@ class UFish():
         assert len(chunk_size) == len(axes), \
             "chunk_size and axes must have the same length"
         total_dfs = []
-        enh_img = np.zeros_like(img, dtype=np.float32)
+        if enh_img is None:
+            enh_img = np.zeros_like(img, dtype=np.float32)
         for c_range, chunk in chunks_iterator(img, chunk_size):
             c_df, c_enh = self.predict(
                 chunk, axes=axes, blend_3d=blend_3d,
