@@ -267,7 +267,7 @@ class UFish():
             blend_3d: bool = False,
             ) -> np.ndarray:
         """Enhance a 2D or 3D image."""
-        from .utils.misc import scale_image
+        from .utils.img import scale_image
         img = scale_image(img, warning=True)
         if img.ndim == 2:
             output = self._enhance_img2d(img)
@@ -277,7 +277,7 @@ class UFish():
                     logger.warning(
                         'Image does not have a z axis, ' +
                         'cannot blend along z axis.')
-                from .utils.misc import enhance_blend_3d
+                from .utils.img import enhance_blend_3d
                 enh_func = partial(
                     self._enhance_img3d, batch_size=batch_size)
                 output = enhance_blend_3d(
@@ -332,7 +332,7 @@ class UFish():
         return df, enhanced_img
 
     def _infer_axes(self, img: np.ndarray):
-        from .utils.misc import infer_img_axes
+        from .utils.img import infer_img_axes
         logger.info("Axes not specified, infering from image shape.")
         axes = infer_img_axes(img.shape)
         logger.info(f"Infered axes: {axes}, image shape: {img.shape}")
@@ -369,7 +369,7 @@ class UFish():
             spots_calling_method: The method to use for spot calling.
             kwargs: Other arguments for the spot calling function.
         """
-        from .utils.misc import (
+        from .utils.img import (
             infer_img_axes, check_img_axes,
             map_predfunc_to_img
         )
@@ -433,14 +433,14 @@ class UFish():
             spots_calling_method: The method to use for spot calling.
             kwargs: Other arguments for the spot calling function.
         """
-        from .utils.misc import (
+        from .utils.img import (
             check_img_axes, chunks_iterator,
             process_chunk_size)
         if axes is None:
             axes = self._infer_axes(img)
         check_img_axes(img, axes)
         if chunk_size is None:
-            from .utils.misc import get_default_chunk_size
+            from .utils.img import get_default_chunk_size
             chunk_size = get_default_chunk_size(axes)
             logger.info(f"Chunk size not specified, using {chunk_size}.")
         chunk_size = process_chunk_size(chunk_size, img.shape)

@@ -163,35 +163,13 @@ class UFishCLI():
             spots_calling_method: The method to use for spot calling.
             kwargs: Other arguments for the spot calling function.
         """
-        import numpy as np
-        import zarr
-        from skimage.io import imread, imsave
+        from skimage.io import imsave
+        from .utils.img import open_for_read, open_for_write
         if not self._weights_loaded:
             self.load_weights()
         logger.info(f'Predicting {input_img_path}')
-        if input_img_path.endswith('.ngff') or \
-                input_img_path.endswith('.ngff.zarr') or \
-                input_img_path.endswith('.ome.zarr'):
-            from .utils.ngff import read_ngff
-            img = read_ngff(input_img_path)
-        elif input_img_path.endswith('.zarr'):
-            img = zarr.open(input_img_path, 'r')
-        elif input_img_path.endswith('.n5'):
-            store = zarr.N5Store(input_img_path)
-            img = zarr.open(store, 'r')
-        else:
-            img = imread(input_img_path)
-        enhanced = None
-        if enhanced_output_path is not None:
-            if enhanced_output_path.endswith('.zarr'):
-                enhanced = zarr.open(
-                    enhanced_output_path, 'w',
-                    shape=img.shape, dtype=np.float32)
-            elif enhanced_output_path.endswith('.n5'):
-                store = zarr.N5Store(enhanced_output_path)
-                enhanced = zarr.zeros(
-                    img.shape, dtype=np.float32,
-                    store=store, overwrite=True)
+        img = open_for_read(input_img_path)
+        enhanced = open_for_write(enhanced_output_path, img.shape)
         if chunking:
             pred_df, enhanced = self._ufish.predict_chunks(
                 img, enh_img=enhanced,

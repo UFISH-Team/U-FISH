@@ -322,3 +322,40 @@ def enhance_blend_3d(
     enh_x = np.moveaxis(enh_x, 0, 2)
     enh_img = enh_z * enh_y * enh_x
     return enh_img
+
+
+def open_for_read(path: str):
+    if path.endswith('.ngff') or \
+            path.endswith('.ngff.zarr') or \
+            path.endswith('.ome.zarr'):
+        from .ngff import read_ngff
+        img = read_ngff(path)
+    elif path.endswith('.zarr'):
+        import zarr
+        img = zarr.open(path, 'r')
+    elif path.endswith('.n5'):
+        import zarr
+        store = zarr.N5Store(path)
+        img = zarr.open(store, 'r')
+    else:
+        from skimage.io import imread
+        img = imread(path)
+    return img
+
+
+def open_for_write(
+        path: str, shape: tuple,
+        dtype=np.float32):
+    img = None
+    if path is not None:
+        if path.endswith('.zarr'):
+            import zarr
+            img = zarr.open(
+                path, 'w', shape=shape, dtype=dtype)
+        elif path.endswith('.n5'):
+            import zarr
+            store = zarr.N5Store(path)
+            img = zarr.zeros(
+                shape, dtype=dtype,
+                store=store, overwrite=True)
+    return img
