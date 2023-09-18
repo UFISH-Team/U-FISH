@@ -217,8 +217,6 @@ class UFish():
 
     def infer(self, img: np.ndarray) -> np.ndarray:
         """Infer the image using the U-Net model."""
-        if not isinstance(img, np.ndarray):
-            img = np.array(img)
         if self.ort_session is not None:
             output = self._infer_onnx(img)
         elif self.model is not None:
@@ -320,6 +318,8 @@ class UFish():
             ) -> T.Tuple[pd.DataFrame, np.ndarray]:
         """Predict the spots in a 2D or 3D image. """
         assert img.ndim in (2, 3), 'Image must be 2D or 3D.'
+        assert len(axes) == img.ndim, \
+            "axes and image dimension must have the same length"
         enhanced_img = self._enhance_2d_or_3d(
             img, axes,
             batch_size=batch_size,
@@ -340,6 +340,7 @@ class UFish():
 
     def predict(
             self, img: np.ndarray,
+            enh_img: T.Optional[np.ndarray] = None,
             axes: T.Optional[str] = None,
             blend_3d: bool = True,
             batch_size: int = 4,
@@ -353,6 +354,8 @@ class UFish():
                 For example, shape (c, z, y, x) for a 4D image,
                 shape (z, y, x) for a 3D image,
                 shape (y, x) for a 2D image.
+            enh_img: The enhanced image, if None, will be created.
+                It can be a multi dimensional array or a zarr array.
             axes: The axes of the image.
                 For example, 'czxy' for a 4D image,
                 'yx' for a 2D image.
@@ -375,9 +378,10 @@ class UFish():
             axes = infer_img_axes(img.shape)
             logger.info(f"Infered axes: {axes}, image shape: {img.shape}")
         check_img_axes(img, axes)
+        if not isinstance(img, np.ndarray):
+            img = np.array(img)
         predfunc = partial(
             self._pred_2d_or_3d,
-            axes=axes,
             blend_3d=blend_3d,
             batch_size=batch_size,
             spots_calling_method=spots_calling_method,
@@ -385,6 +389,8 @@ class UFish():
             )
         df, enhanced_img = map_predfunc_to_img(
             predfunc, img, axes)
+        if enh_img is not None:
+            enh_img[:] = enhanced_img
         return df, enhanced_img
 
     def predict_chunks(
@@ -394,26 +400,57 @@ class UFish():
             axes: T.Optional[str] = None,
             blend_3d: bool = True,
             batch_size: int = 4,
-            chunk_size: T.Optional[T.Tuple[int, ...]] = None,
+            chunk_size: T.Optional[T.Tuple[T.Union[int, str], ...]] = None,
             spots_calling_method: str = 'local_maxima',
             **kwargs,
             ):
+        """Predict the spots in an image chunk by chunk.
+
+        Args:
+            img: The image to predict, it should be a multi dimensional array.
+                For example, shape (c, z, y, x) for a 4D image,
+                shape (z, y, x) for a 3D image,
+                shape (y, x) for a 2D image.
+            enh_img: The enhanced image, if None, will be created.
+                It can be a multi dimensional array or a zarr array.
+            axes: The axes of the image.
+                For example, 'czxy' for a 4D image,
+                'yx' for a 2D image.
+                If None, will try to infer the axes from the shape.
+            blend_3d: Whether to blend the 3D image.
+                Used only when the image contains a z axis.
+                If True, will blend the 3D enhanced images along
+                the z, y, x axes.
+            batch_size: The batch size for inference.
+                Used only when the image dimension is 3 or higher.
+            chunk_size: The chunk size for processing.
+                For example, (1, 512, 512) for a 3D image,
+                (512, 512) for a 2D image.
+                Using 'image' as a dimension will use the whole image
+                as a chunk. For example, (1, 'image', 'image') for a 3D image,
+                ('image', 'image', 'image', 512, 512) for a 5D image.
+                If None, will use the default chunk size.
+            spots_calling_method: The method to use for spot calling.
+            kwargs: Other arguments for the spot calling function.
+        """
         from .utils.misc import (
-            check_img_axes, chunks_iterator)
+            check_img_axes, chunks_iterator,
+            process_chunk_size)
         if axes is None:
             axes = self._infer_axes(img)
         check_img_axes(img, axes)
         if chunk_size is None:
             from .utils.misc import get_default_chunk_size
-            chunk_size = get_default_chunk_size(img.shape, axes)
+            chunk_size = get_default_chunk_size(axes)
             logger.info(f"Chunk size not specified, using {chunk_size}.")
+        chunk_size = process_chunk_size(chunk_size, img.shape)
         logger.info(f"Chunk size: {chunk_size}")
-        assert len(chunk_size) == len(axes), \
-            "chunk_size and axes must have the same length"
         total_dfs = []
         if enh_img is None:
             enh_img = np.zeros_like(img, dtype=np.float32)
         for c_range, chunk in chunks_iterator(img, chunk_size):
+            logger.info("Processing chunk: " + str(c_range)
+                        + ", chunk shape: " + str(chunk.shape))
             c_df, c_enh = self.predict(
                 chunk, axes=axes, blend_3d=blend_3d,
                 batch_size=batch_size,

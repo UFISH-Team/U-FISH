@@ -124,7 +124,7 @@ class UFishCLI():
             input_img_path: str,
             output_csv_path: str,
             enhanced_output_path: T.Optional[str] = None,
-            chunking: bool = True,
+            chunking: bool = False,
             chunk_size: T.Optional[T.Tuple[int, ...]] = None,
             axes: T.Optional[str] = None,
             blend_3d: bool = True,
@@ -136,10 +136,20 @@ class UFishCLI():
 
         Args:
             input_img_path: Path to the input image.
+                Supported formats: tif, zarr, n5, ngff(ome-tiff).
             output_csv_path: Path to the output csv file.
             enhanced_output_path: Path to the enhanced image.
+                If None, will not save the enhanced image.
+                Supported formats: tif, zarr, n5.
             chunking: Whether to use chunking for inference.
-            chunk_size: The chunk size for inference.
+                If True, will infer the image chunk by chunk.
+            chunk_size: The chunk size for processing.
+                For example, (1, 512, 512) for a 3D image,
+                (512, 512) for a 2D image.
+                Using 'image' as a dimension will use the whole image
+                as a chunk. For example, (1, 'image', 'image') for a 3D image,
+                ('image', 'image', 'image', 512, 512) for a 5D image.
+                If None, will use the default chunk size.
             axes: The axes of the image.
                 For example, 'czxy' for a 4D image,
                 'yx' for a 2D image.
@@ -171,17 +181,18 @@ class UFishCLI():
             img = zarr.open(store, 'r')
         else:
             img = imread(input_img_path)
+        enhanced = None
+        if enhanced_output_path is not None:
+            if enhanced_output_path.endswith('.zarr'):
+                enhanced = zarr.open(
+                    enhanced_output_path, 'w',
+                    shape=img.shape, dtype=np.float32)
+            elif enhanced_output_path.endswith('.n5'):
+                store = zarr.N5Store(enhanced_output_path)
+                enhanced = zarr.zeros(
+                    img.shape, dtype=np.float32,
+                    store=store, overwrite=True)
         if chunking:
-            if enhanced_output_path is not None:
-                if enhanced_output_path.endswith('.zarr'):
-                    enhanced = zarr.open(
-                        enhanced_output_path, 'w',
-                        shape=img.shape, dtype=np.float32)
-                elif enhanced_output_path.endswith('.n5'):
-                    store = zarr.N5Store(enhanced_output_path)
-                    enhanced = zarr.zeros(
-                        img.shape, dtype=np.float32,
-                        store=store, overwrite=True)
             pred_df, enhanced = self._ufish.predict_chunks(
                 img, enh_img=enhanced,
                 axes=axes, blend_3d=blend_3d,
@@ -191,7 +202,8 @@ class UFishCLI():
                 **kwargs)
         else:
             pred_df, enhanced = self._ufish.predict(
-                img, axes=axes, blend_3d=blend_3d,
+                img, enh_img=enhanced,
+                axes=axes, blend_3d=blend_3d,
                 batch_size=batch_size,
                 spots_calling_method=spot_calling_method,
                 **kwargs)

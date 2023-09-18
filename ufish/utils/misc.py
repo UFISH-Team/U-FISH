@@ -140,14 +140,16 @@ def map_predfunc_to_img(
     new_axes = axes.replace('y', '').replace('x', '') + 'yx'
     dfs = []
     if len(img.shape) in (2, 3):
-        df, e_img = predfunc(img)
+        df, e_img = predfunc(img, axes=axes)
         df = expand_df_axes(df, new_axes, [])
         dfs.append(df)
     elif len(img.shape) == 4:
         e_img = np.zeros_like(img, dtype=np.float32)
         for i, img_3d in enumerate(img):
-            logger.info(f'Processing image {i+1}/{len(img)}')
-            df, e_img[i] = predfunc(img_3d)
+            logger.info(
+                'Processing multi-dimensional image'
+                f' {i+1}/{len(img)}')
+            df, e_img[i] = predfunc(img_3d, axes=axes[1:])
             df = expand_df_axes(df, new_axes, [i])
             dfs.append(df)
     else:
@@ -157,8 +159,10 @@ def map_predfunc_to_img(
         for i, img_4d in enumerate(img):
             for j, img_3d in enumerate(img_4d):
                 logger.info(
-                    f'Processing image {i*img.shape[1]+j+1}/{num_imgs}')
-                df, e_img[i, j] = predfunc(img_3d)
+                    'Processing multi-dimensional image'
+                    f' {i*img.shape[1]+j+1}/{num_imgs}'
+                    )
+                df, e_img[i, j] = predfunc(img_3d, axes=axes[2:])
                 df = expand_df_axes(df, new_axes, [i, j])
                 dfs.append(df)
     # move yx back to the original position
@@ -171,13 +175,12 @@ def map_predfunc_to_img(
 
 
 def get_default_chunk_size(
-        img_shape: tuple,
         axes: str,
         default_x: T.Union[int, str] = 512,
         default_y: T.Union[int, str] = 512,
         default_z: T.Union[int, str] = 'image',
-        default_c: T.Union[int, str] = 1,
-        default_t: T.Union[int, str] = 1,
+        default_c: T.Union[int, str] = 'image',
+        default_t: T.Union[int, str] = 'image',
         ) -> tuple:
     """Get the default chunk size of an image.
 
@@ -204,20 +207,36 @@ def get_default_chunk_size(
     }
     chunk_size = []
 
-    def get_default_size(default_size, dim_size):
-        if default_size == 'image':
-            return dim_size
-        else:
-            return min(default_size, dim_size)
     for c in axes:
         if c in default_sizes:
-            default_size = default_sizes[c]
-            dim_size = img_shape[axes.index(c)]
-            chunk_size.append(get_default_size(default_size, dim_size))
+            chunk_size.append(default_sizes[c])
         else:
             raise ValueError(
                 f'Axis {c} is not supported. ')
     return tuple(chunk_size)
+
+
+def process_chunk_size(
+        chunk_size: T.Tuple[T.Union[int, str], ...],
+        img_shape: T.Tuple[int, ...],
+        ) -> T.Tuple[int, ...]:
+    """Process the chunk size of an image.
+    If the chunk size is 'image', then the chunk size
+    will be the same as the image shape.
+
+    Args:
+        chunk_size: Chunk size of the image.
+        img_shape: Shape of the image.
+    """
+    assert len(chunk_size) == len(img_shape), \
+        "chunk_size and img_shape must have the same length"
+    new_chunk_size = []
+    for i, size in enumerate(chunk_size):
+        if size == 'image':
+            new_chunk_size.append(img_shape[i])
+        else:
+            new_chunk_size.append(size)
+    return tuple(new_chunk_size)
 
 
 def get_chunks_range(
