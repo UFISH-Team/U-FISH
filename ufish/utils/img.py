@@ -325,9 +325,8 @@ def enhance_blend_3d(
 
 
 def open_for_read(path: str):
-    if path.endswith('.ngff') or \
-            path.endswith('.ngff.zarr') or \
-            path.endswith('.ome.zarr'):
+    from .ngff import is_ngff_suffix
+    if is_ngff_suffix(path):
         from .ngff import read_ngff
         img = read_ngff(path)
     elif path.endswith('.zarr'):
@@ -348,7 +347,8 @@ def open_for_write(
         dtype=np.float32):
     img = None
     if path is not None:
-        if path.endswith('.zarr'):
+        from .ngff import is_ngff_suffix
+        if path.endswith('.zarr') or is_ngff_suffix(path):
             import zarr
             img = zarr.open(
                 path, 'w', shape=shape, dtype=dtype)
@@ -359,3 +359,41 @@ def open_for_write(
                 shape, dtype=dtype,
                 store=store, overwrite=True)
     return img
+
+
+def open_enhimg_storage(enh_path: str, shape: tuple):
+    from .ngff import is_ngff_suffix
+    tmp_enh_path = None
+    if (enh_path is not None) and is_ngff_suffix(enh_path):
+        if enh_path.endswith("/"):
+            enh_path = enh_path[:-1]
+        tmp_enh_path = enh_path + '.tmp.zarr'
+        enhanced = open_for_write(tmp_enh_path, shape)
+    else:
+        enhanced = open_for_write(enh_path, shape)
+    return enhanced, tmp_enh_path
+
+
+def save_enhimg(
+        enhanced, tmp_enh_path,
+        enh_path: str, axes: str):
+    from .ngff import is_ngff_suffix
+    from .log import logger
+    if is_ngff_suffix(enh_path):
+        logger.info("Saving enhanced image to ngff file.")
+        from .ngff import create_ngff, generate_omero_info
+        omero_info = generate_omero_info(data=enhanced, axes=axes)
+        create_ngff(
+            data=enhanced, out_path=enh_path,
+            axes=axes, omero_info=omero_info)
+        if tmp_enh_path is not None:
+            import shutil
+            shutil.rmtree(tmp_enh_path)
+    elif enh_path.endswith('.zarr'):
+        logger.info("Saving enhanced image to zarr file.")
+    elif enh_path.endswith('.n5'):
+        logger.info("Saving enhanced image to n5 file.")
+    else:
+        from skimage.io import imsave
+        imsave(enh_path, enhanced, check_contrast=False)
+    logger.info(f'Saved enhanced image to {enh_path}')

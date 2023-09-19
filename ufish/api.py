@@ -331,13 +331,6 @@ class UFish():
             **kwargs)
         return df, enhanced_img
 
-    def _infer_axes(self, img: np.ndarray):
-        from .utils.img import infer_img_axes
-        logger.info("Axes not specified, infering from image shape.")
-        axes = infer_img_axes(img.shape)
-        logger.info(f"Infered axes: {axes}, image shape: {img.shape}")
-        return axes
-
     def predict(
             self, img: np.ndarray,
             enh_img: T.Optional[np.ndarray] = None,
@@ -437,7 +430,7 @@ class UFish():
             check_img_axes, chunks_iterator,
             process_chunk_size)
         if axes is None:
-            axes = self._infer_axes(img)
+            axes = self.infer_axes(img)
         check_img_axes(img, axes)
         if chunk_size is None:
             from .utils.img import get_default_chunk_size

@@ -22,10 +22,15 @@ The underlying concept of our method, U-FISH, acknowledges the significant varia
   + [x] seqFISH
 - [x] Try other signal footprint
   + [x] Gaussian
-  + [ ] Other shape
+  + [x] Single pixel prediction
 - [x] Support for multi-channel images.
-- [ ] 3D integration method
+- [x] 3D integration method
   + [x] Stack 2D UEI to 3D, then apply local maxima.
+  + [x] 3D blending: apply to xy, xz, yz planes, then blend.
+- [x] Support for image chunks and zarr file format.
+  + [x] Inference chunk by chunk.
+  + [x] Read image from zarr/n5/ome-zarr file.
+  + [x] Write UEI to zarr/n5/ome-zarr file.
 - [ ] deploy
   + [x] setup.py
   + [x] upload model weights to huggingface
@@ -35,7 +40,6 @@ The underlying concept of our method, U-FISH, acknowledges the significant varia
   + [ ] Napari plugin
   + [ ] Web page
 - [ ] Benchmarks
-- [ ] Support for image chunks and zarr file format.
 - [ ] Documentation
 
 ## Usage

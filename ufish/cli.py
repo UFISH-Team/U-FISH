@@ -163,13 +163,20 @@ class UFishCLI():
             spots_calling_method: The method to use for spot calling.
             kwargs: Other arguments for the spot calling function.
         """
-        from skimage.io import imsave
-        from .utils.img import open_for_read, open_for_write
+        from .utils.img import (
+            open_for_read, open_enhimg_storage, save_enhimg,
+            infer_img_axes,
+        )
         if not self._weights_loaded:
             self.load_weights()
         logger.info(f'Predicting {input_img_path}')
         img = open_for_read(input_img_path)
-        enhanced = open_for_write(enhanced_output_path, img.shape)
+        enhanced, tmp_ehn_path = open_enhimg_storage(
+            enhanced_output_path, img.shape)
+        if axes is None:
+            logger.info("Axes not specified, infering from image shape.")
+            axes = infer_img_axes(img.shape)
+            logger.info(f"Infered axes: {axes}, image shape: {img.shape}")
         if chunking:
             pred_df, enhanced = self._ufish.predict_chunks(
                 img, enh_img=enhanced,
@@ -188,13 +195,9 @@ class UFishCLI():
         pred_df.to_csv(output_csv_path, index=False)
         logger.info(f'Saved predicted spots to {output_csv_path}')
         if enhanced_output_path is not None:
-            if enhanced_output_path.endswith('.zarr'):
-                logger.info("Saving enhanced image to zarr file.")
-            elif enhanced_output_path.endswith('.n5'):
-                logger.info("Saving enhanced image to n5 file.")
-            else:
-                imsave(enhanced_output_path, enhanced, check_contrast=False)
-            logger.info(f'Saved enhanced image to {enhanced_output_path}')
+            save_enhimg(
+                enhanced, tmp_ehn_path, enhanced_output_path, axes
+            )
 
     def predict_imgs(
             self,

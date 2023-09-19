@@ -10,18 +10,22 @@ from dask.array import Array
 
 
 def create_ngff(
-        data: T.Union[np.ndarray, Array], out_path: str,
-        axes: str, chunks: tuple,
+        data: T.Union[np.ndarray, Array],
+        out_path: str, axes: str,
+        chunks: T.Optional[tuple] = None,
         omero_info: T.Optional[dict] = None,
         ) -> zarr.Group:
-    assert len(axes) == len(chunks), \
-        "axes and chunks must have the same length"
     store = parse_url(out_path, mode="w").store
     root = zarr.group(store=store)
-    write_image(
-        image=data, group=root, axes="cyx",
-        storage_options=dict(chunks=chunks),
-    )
+    if chunks is None:
+        write_image(image=data, group=root, axes=axes)
+    else:
+        assert len(axes) == len(chunks), \
+            "axes and chunks must have the same length"
+        write_image(
+            image=data, group=root, axes=axes,
+            storage_options=dict(chunks=chunks),
+        )
     if omero_info is not None:
         root.attrs["omero"] = omero_info
     return root
@@ -38,9 +42,10 @@ def random_hex_color():
 def generate_omero_info(
         data: T.Union[np.ndarray, Array],
         axes: str,
-        channel_names: T.Optional[T.List[str]],
-        channel_colors: T.Optional[T.List[str]],
+        channel_names: T.Optional[T.List[str]] = None,
+        channel_colors: T.Optional[T.List[str]] = None,
         ) -> dict:
+    """Generate the omero info for the ngff file."""
     channel_num = data.shape[axes.index("c")]
     if channel_names is None:
         channel_names = [
@@ -68,6 +73,14 @@ def read_ngff(
         path: str,
         resolution_level: int = 0,
         ) -> Array:
+    """Read the ngff file.
+
+    Args:
+        path: The path to the ngff file.
+        resolution_level: The resolution level to read.
+            0 means the highest resolution,
+            -1 means the lowest resolution.
+    """
     reader = Reader(parse_url(path, mode="r"))
     first_node = next(reader())
     arrs = sorted(
@@ -76,3 +89,16 @@ def read_ngff(
     )
     arr = arrs[resolution_level]
     return arr
+
+
+def is_ngff_suffix(path: str):
+    """Check whether the suffix of the path is ngff."""
+    if path.endswith("/"):
+        path = path[:-1]
+    if path.endswith(".ome.zarr"):
+        return True
+    if path.endswith(".ngff"):
+        return True
+    if path.endswith(".ngff.zarr"):
+        return True
+    return False
