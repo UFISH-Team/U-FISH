@@ -140,7 +140,7 @@ class UFishCLI():
             output_csv_path: Path to the output csv file.
             enhanced_output_path: Path to the enhanced image.
                 If None, will not save the enhanced image.
-                Supported formats: tif, zarr, n5.
+                Supported formats: tif, zarr, n5, ngff(ome-tiff).
             chunking: Whether to use chunking for inference.
                 If True, will infer the image chunk by chunk.
             chunk_size: The chunk size for processing.

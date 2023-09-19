@@ -2,6 +2,7 @@ import typing as T
 import numpy as np
 import pandas as pd
 from itertools import product
+from os.path import isdir
 
 from skimage.exposure import rescale_intensity
 
@@ -326,7 +327,7 @@ def enhance_blend_3d(
 
 def open_for_read(path: str):
     from .ngff import is_ngff_suffix
-    if is_ngff_suffix(path):
+    if is_ngff_suffix(path) or isdir(path):
         from .ngff import read_ngff
         img = read_ngff(path)
     elif path.endswith('.zarr'):
