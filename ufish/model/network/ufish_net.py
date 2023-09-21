@@ -196,28 +196,3 @@ class UNet(nn.Module):
 
         x = self.final_decoder(x)
         return x
-
-
-class FCN(nn.Module):
-    """Single level fully convolutional network."""
-    def __init__(
-            self,
-            in_channels: int = 1,
-            out_channels: int = 1,
-            depth: int = 10,
-            base_channels: int = 32,
-            ):
-        super().__init__()
-        self.layers = nn.ModuleList()
-        for i in range(depth):
-            if i == 0:
-                self.layers.append(ConvBlock(in_channels, base_channels))
-            elif i == (depth - 1):
-                self.layers.append(ResidualBlock(base_channels))
-            else:
-                self.layers.append(ConvBlock(base_channels, base_channels))
-
-    def forward(self, x):
-        for layer in self.layers:
-            x = layer(x)
-        return x
