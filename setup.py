@@ -80,6 +80,7 @@ setup(
     install_requires=get_install_requires(),
     extras_require={
         'dev': requires_dev,
+        'onnxruntime-gpu': ['onnxruntime-gpu'],
     },
     python_requires='>=3.9, <4',
     entry_points={

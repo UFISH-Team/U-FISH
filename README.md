@@ -51,11 +51,21 @@ Key points about U-FISH:
 - [ ] Benchmarks
 - [ ] Documentation
 
-## Usage
+## Installation
 
 ```bash
 pip install ufish
 ```
+
+For inference using GPU:
+
+```bash
+pip install ufish[onnxruntime-gpu]
+```
+
+For training using GPU, you need to install PyTorch with CUDA support, see [PyTorch official website](https://pytorch.org/) for details.
+
+## Usage
 
 CLI usage:
 
