@@ -138,10 +138,11 @@ class FISHSpotsDataset(Dataset):
     @staticmethod
     def dialate_mask(
             mask: np.ndarray,
-            footprint: np.ndarray = morphology.disk(2)
+            footprint: str = 'disk(2)'
             ) -> np.ndarray:
         """Dialate the mask."""
-        return dilation(mask, footprint=footprint)
+        _footprint = eval(f"morphology.{footprint}")
+        return dilation(mask, footprint=_footprint)
 
     def __len__(self):
         return len(self.reader)

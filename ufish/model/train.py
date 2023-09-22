@@ -7,7 +7,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 from torch import Tensor
 
-from .loss import DiceLoss, RMSELoss
+from . import loss as loss_mod  # noqa: F401
 from ..data import FISHSpotsDataset
 from ..utils.log import logger
 
@@ -122,6 +122,7 @@ def train_on_dataset(
         model: torch.nn.Module,
         train_dataset: FISHSpotsDataset,
         valid_dataset: FISHSpotsDataset,
+        loss_type: str = "DiceRMSELoss",
         loader_workers: int = 4,
         num_epochs: int = 50,
         batch_size: int = 8,
@@ -136,6 +137,7 @@ def train_on_dataset(
         model: The model to train.
         train_dataset: The training dataset.
         valid_dataset: The validation dataset.
+        loss_type: The loss function to use.
         loader_workers: The number of workers to use for the data loader.
         num_epochs: The number of epochs to train for.
         batch_size: The batch size.
@@ -163,13 +165,8 @@ def train_on_dataset(
     logger.info(f"Training using device: {device}")
     model = model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    rmse_loss = RMSELoss()
-    dice_loss = DiceLoss()
 
-    def criterion(pred, target):
-        loss_dice = dice_loss(pred, target)
-        loss_rmse = rmse_loss(pred, target)
-        return 0.6 * loss_dice + 0.4 * loss_rmse
+    criterion = eval(f"loss_mod.{loss_type}")()
 
     writer = SummaryWriter(summary_dir)
     training_loop(

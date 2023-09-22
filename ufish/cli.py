@@ -40,20 +40,16 @@ class UFishCLI():
     def init_model(
             self,
             model_type: str = 'unet',
-            depth: int = 3,
-            base_channels: int = 64,
-            ):
+            **kwargs):
         """Initialize the model.
 
         Args:
             model_type: The type of the model. 'unet' or 'fcn'.
-            depth: The depth of the network.
-            base_channels: The number of base channels.
+            kwargs: The keyword arguments for the model.
         """
         self._ufish.init_model(
             model_type=model_type,
-            depth=depth,
-            base_channels=base_channels,
+            **kwargs
         )
         return self
 
@@ -459,6 +455,7 @@ class UFishCLI():
             img_glob: str = '*.tif',
             coord_glob: str = '*.csv',
             target_process: T.Optional[str] = 'gaussian',
+            loss_type: str = 'DiceRMSELoss',
             loader_workers: int = 4,
             data_argu: bool = False,
             argu_prob: float = 0.5,
@@ -485,6 +482,7 @@ class UFishCLI():
                 'gaussian' or 'dialation' or None.
                 If None, no processing will be applied.
                 default 'gaussian'.
+            loss_type: The loss function type.
             loader_workers: The number of workers to use for the data loader.
             data_argu: Whether to use data augmentation.
             argu_prob: The probability to use data augmentation.
@@ -502,6 +500,7 @@ class UFishCLI():
             img_glob=img_glob,
             coord_glob=coord_glob,
             target_process=target_process,
+            loss_type=loss_type,
             loader_workers=loader_workers,
             data_argu=data_argu,
             argu_prob=argu_prob,

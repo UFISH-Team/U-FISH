@@ -42,24 +42,25 @@ class UFish():
     def init_model(
             self,
             model_type: str = 'unet',
-            depth=2, base_channels=32) -> None:
+            **kwargs) -> None:
         """Initialize the model.
 
         Args:
             model_type: The type of the model. 'unet' or 'fcn'.
-            depth: The depth of the network.
-            base_channels: The number of base channels.
+            kwargs: Other arguments for the model.
         """
         import torch
         if model_type == 'unet':
-            from .model.network import UNet
-            self.model = UNet(depth=depth, base_channels=base_channels)
+            from .model.network.ufish_net import UNet
+            self.model = UNet(**kwargs)
+        elif model_type == 'spot_learn':
+            from .model.network.spot_learn import SpotLearn
+            self.model = SpotLearn(**kwargs)
         else:
-            from .model.network import FCN
-            self.model = FCN(depth=depth, base_channels=base_channels)
+            raise ValueError(f'Unknown model type: {model_type}')
         params = sum(p.numel() for p in self.model.parameters())
-        logger.info(f'Initializing {model_type} model with depth={depth}, '
-                    f'base_channels={base_channels}')
+        logger.info(
+            f'Initializing {model_type} model with kwargs: {kwargs}')
         logger.info(f'Number of parameters: {params}')
         self.cuda = False
         if self._cuda:
@@ -627,6 +628,7 @@ class UFish():
             img_glob: str = '*.tif',
             coord_glob: str = '*.csv',
             target_process: T.Optional[str] = 'gaussian',
+            loss_type: str = 'DiceRMSELoss',
             loader_workers: int = 4,
             data_argu: bool = False,
             argu_prob: float = 0.5,
@@ -654,6 +656,7 @@ class UFish():
                 'gaussian' or 'dialation' or None.
                 If None, no processing will be applied.
                 default 'gaussian'.
+            loss_type: The loss function type.
             loader_workers: The number of workers to use for the data loader.
             data_argu: Whether to use data augmentation.
             argu_prob: The probability to use data augmentation.
@@ -686,6 +689,11 @@ class UFish():
             process_func = FISHSpotsDataset.gaussian_filter
         elif target_process == 'dialation':
             process_func = FISHSpotsDataset.dialate_mask
+        elif isinstance(target_process, str):
+            from functools import partial
+            process_func = partial(
+                FISHSpotsDataset.dialate_mask,
+                footprint=target_process)
         else:
             process_func = None
 
@@ -713,6 +721,7 @@ class UFish():
         train_on_dataset(
             self.model,
             train_dataset, valid_dataset,
+            loss_type=loss_type,
             loader_workers=loader_workers,
             num_epochs=num_epochs,
             batch_size=batch_size,
