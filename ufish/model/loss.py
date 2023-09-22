@@ -45,7 +45,7 @@ class DiceRMSELoss(nn.Module):
         return _dice + _rmse
 
 
-class DiceCoef(nn.Module):
+class DiceCoefLoss(nn.Module):
     def __init__(self):
         super().__init__()
 
@@ -59,4 +59,4 @@ class DiceCoef(nn.Module):
         return a / b
 
     def forward(self, y_hat, y):
-        return self._dice_coef(y, y_hat)
+        return - self._dice_coef(y, y_hat)
