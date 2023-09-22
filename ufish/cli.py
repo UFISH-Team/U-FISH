@@ -11,7 +11,7 @@ class UFishCLI():
             self,
             cuda: bool = True,
             local_store_path: str = '~/.ufish/',
-            weights_file_name: str = 'v1.0-alldata-ufish_c32.onnx',
+            weights_file_name: T.Optional[str] = None,
             ):
         from .api import UFish
         self._ufish = UFish(
@@ -80,14 +80,12 @@ class UFishCLI():
             max_retry: The maximum number of retries to download the weights.
             force_download: Whether to force download the weights.
         """
-        if weights_path is not None:
-            self._ufish.load_weights(weights_path)
-        else:
-            self._ufish.load_weights_from_internet(
-                weights_file=weights_file,
-                max_retry=max_retry,
-                force_download=force_download,
-            )
+        self._ufish.load_weights(
+            weights_path=weights_path,
+            weights_file=weights_file,
+            max_retry=max_retry,
+            force_download=force_download,
+        )
         self._weights_loaded = True
         return self
 
