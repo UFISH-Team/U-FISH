@@ -5,7 +5,7 @@ U-FISH is an advanced FISH spot calling algorithm based on deep learning. The "U
 Key points about U-FISH:
 
 1. U-FISH was trained and tested on a diverse dataset comprising 4000+ images with approximately 1.6 million targets from seven sources, including 2 simulated datasets and 5 real datasets. This extensive training resulted in achieving state-of-the-art performance.
-2. The network architecture has been optimized to achieve this level of performance with a compact model size of only 160k parameters.
+2. The network architecture has been optimized to achieve this level of performance with a compact model size of only 160k parameters. The ONNX file of the model is only about 680kB in size, making it suitable for inference on edge devices.
 3. U-FISH addresses a limitation of other deep learning-based spot calling algorithms by successfully handling 3D data, overcoming a significant drawback in this field.
 4. It offers support for large-scale data storage formats such as OME-Zarr and N5, enhancing its versatility and applicability.
 5. U-FISH provides a user-friendly interface through APIs, a command-line interface (CLI), a Napari plugin, and an online application, enhancing accessibility and ease of use.
@@ -52,7 +52,7 @@ Key points about U-FISH:
 ## Usage
 
 ```bash
-pip install u-fish
+pip install ufish
 ```
 
 API for inference and evaluation:

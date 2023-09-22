@@ -64,12 +64,12 @@ requires_dev = packages_for_dev + requires_test + get_doc_requires()
 
 
 setup(
-    name='u-fish',
+    name='ufish',
     author='Weize Xu, Huaiyuan Cai, Qian Zhang',
     author_email='vet.xwz@gmail.com',
     version=get_version(),
     license='MIT',
-    description='Package for manage job executions.',
+    description='Deep learning based spot detection for FISH images.',
     long_description=get_long_description(),
     keywords=keywords,
     url=URL,
