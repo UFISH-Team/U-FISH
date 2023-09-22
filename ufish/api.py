@@ -41,18 +41,19 @@ class UFish():
 
     def init_model(
             self,
-            model_type: str = 'unet',
+            model_type: str = 'ufish',
             **kwargs) -> None:
         """Initialize the model.
 
         Args:
-            model_type: The type of the model. 'unet' or 'fcn'.
+            model_type: The type of the model. For example,
+                'ufish', 'spot_learn', ...
             kwargs: Other arguments for the model.
         """
         import torch
-        if model_type == 'unet':
-            from .model.network.ufish_net import UNet
-            self.model = UNet(**kwargs)
+        if model_type == 'ufish':
+            from .model.network.ufish_net import UFishNet
+            self.model = UFishNet(**kwargs)
         elif model_type == 'spot_learn':
             from .model.network.spot_learn import SpotLearn
             self.model = SpotLearn(**kwargs)

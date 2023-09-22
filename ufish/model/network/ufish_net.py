@@ -158,35 +158,29 @@ class FinalDecoderBlock(nn.Module):
         return out
 
 
-class UNet(nn.Module):
+class UFishNet(nn.Module):
     def __init__(
             self, in_channels=1, out_channels=1,
-            depth=2, base_channels=32):
-        super(UNet, self).__init__()
-
+            channel_numbers=[32, 32, 32]):
+        super().__init__()
         self.encoders = nn.ModuleList()
         self.downsamples = nn.ModuleList()
-        for i in range(depth):
-            input_channels = (
-                in_channels if i == 0 else base_channels
-            )
-            output_channels = base_channels
-            self.encoders.append(
-                EncoderBlock(input_channels, output_channels))
-            self.downsamples.append(DownConv(output_channels, output_channels))
+        for i, c in enumerate(channel_numbers[:-1]):
+            _ei = (in_channels if i == 0 else c)
+            self.encoders.append(EncoderBlock(_ei, c))
+            self.downsamples.append(DownConv(c, channel_numbers[i+1]))
 
-        self.bottom = BottoleneckBlock(base_channels)
+        self.bottom = BottoleneckBlock(channel_numbers[-1])
 
         self.decoders = nn.ModuleList()
         self.upsamples = nn.ModuleList()
-        for i in range(depth, 0, -1):
-            input_channels = base_channels
-            output_channels = base_channels
-            self.decoders.append(
-                DecoderBlock(2*input_channels, output_channels))
-            self.upsamples.append(UpConv(input_channels, output_channels))
+        rev_nums = channel_numbers[::-1]
+        for i, c in enumerate(rev_nums[1:]):
+            self.upsamples.append(UpConv(rev_nums[i], c))
+            self.decoders.append(DecoderBlock(2*c, c))
 
-        self.final_decoder = FinalDecoderBlock(base_channels, out_channels)
+        self.final_decoder = FinalDecoderBlock(
+            channel_numbers[0], out_channels)
 
     def forward(self, x):
         encodings = []
