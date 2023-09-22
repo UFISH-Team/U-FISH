@@ -1,8 +1,15 @@
 # U-FISH 🎣
 
-Unified, U-Net based, deep learning method for FISH spot detection, trained on diverse datasets.
+U-FISH is an advanced FISH spot calling algorithm based on deep learning. The "U" in U-FISH represents both the U-Net architecture and the Unified output of enhanced images, underpinning our design philosophy. U-FISH has been developed to address the challenges posed by significant variations in experimental conditions, hybridization targets, and imaging parameters across different data sources. These variations result in diverse image backgrounds and varying signal spot features. Conventional algorithms and parameter settings often fall short in accommodating the requirements of all these diverse image types. To overcome this limitation, we have devised a novel image enhancement approach based on the U-Net model, aimed at achieving a standardized output format for images.
 
-The underlying concept of our method, U-FISH, acknowledges the significant variations in image background and signal spot features due to differences in experimental conditions, hybridization targets, and imaging parameters across various data sources. A single algorithm or parameter setting often falls short in accommodating all these image types. Therefore, we introduce an image-to-image U-Net model to enhance input images by suppressing background noise, eliminating post-enhancement noise, and normalizing the size of signal spots. We then apply conventional methods for spot detection on these enhanced images, thus achieving higher accuracy.
+Key points about U-FISH:
+
+1. U-FISH was trained and tested on a diverse dataset comprising 4000+ images with approximately 1.6 million targets from seven sources, including 2 simulated datasets and 5 real datasets. This extensive training resulted in achieving state-of-the-art performance.
+2. The network architecture has been optimized to achieve this level of performance with a compact model size of only 160k parameters.
+3. U-FISH addresses a limitation of other deep learning-based spot calling algorithms by successfully handling 3D data, overcoming a significant drawback in this field.
+4. It offers support for large-scale data storage formats such as OME-Zarr and N5, enhancing its versatility and applicability.
+5. U-FISH provides a user-friendly interface through APIs, a command-line interface (CLI), a Napari plugin, and an online application, enhancing accessibility and ease of use.
+
 
 ## TODO List
 
@@ -61,7 +68,7 @@ ufish.load_weights("path/to/weights")  # loading model weights
 
 # inference
 img = io.imread("path/to/image")
-pred_spots = ufish.predict(img)
+pred_spots, enh_img = ufish.predict(img)
 
 # plot prediction result
 fig_spots = ufish.plot_result(img, pred_spots)
@@ -71,7 +78,7 @@ true_spots = pd.read_csv("path/to/true_spots.csv")
 metrics = ufish.evaluate_result(spots, true_spots)
 
 # plot evaluation result
-fig_eval = ufish.plot_evaluation_result(
+fig_eval = ufish.plot_evaluate(
     img, pred_spots, true_spots, cutoff=3.0)
 ```
 
@@ -114,13 +121,10 @@ $ ufish predict-imgs input_dir output_dir
 $ ufish load-weights path/to/weights - predict-imgs input.tiff output.csv
 
 # training from scratch
-$ ufish train path/to/train_dir path/to/val_dir --model_save_path path/to/save/model
+$ ufish train path/to/train_dir path/to/val_dir --model_save_dir path/to/save/model
 
 # training from a pre-trained model (fine-tuning)
-$ ufish load-weights path/to/weights - train path/to/train_dir path/to/val_dir --model_save_path path/to/save/model
-
-# evaluate prediction results in a directory
-$ ufish evaluate-imgs path/to/pred_dir path/to/true_dir output.csv
+$ ufish load-weights path/to/weights - train path/to/train_dir path/to/val_dir --model_save_dir path/to/save/model
 ```
 
 ## Dataset
