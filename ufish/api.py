@@ -21,7 +21,7 @@ BASE_STORE_URL = 'https://huggingface.co/GangCaoLab/U-FISH/resolve/main/'
 class UFish():
     def __init__(
             self, cuda: bool = True,
-            default_weights_file: str = 'v2.0-alldata-unet_d2_b32.onnx',
+            default_weights_file: str = 'v1.0-alldata-ufish_c32.onnx',
             local_store_path: str = '~/.ufish/'
             ) -> None:
         """

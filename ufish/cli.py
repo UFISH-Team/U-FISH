@@ -11,7 +11,7 @@ class UFishCLI():
             self,
             cuda: bool = True,
             local_store_path: str = '~/.ufish/',
-            weights_file_name: str = 'v2.0-alldata-unet_d2_b32.onnx',
+            weights_file_name: str = 'v1.0-alldata-ufish_c32.onnx',
             ):
         from .api import UFish
         self._ufish = UFish(
