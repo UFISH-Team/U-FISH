@@ -1,5 +1,7 @@
 # U-FISH 🎣
 
+**Work in progress**
+
 U-FISH is an advanced FISH spot calling algorithm based on deep learning. The "U" in U-FISH represents both the U-Net architecture and the Unified output of enhanced images, underpinning our design philosophy. U-FISH has been developed to address the challenges posed by significant variations in experimental conditions, hybridization targets, and imaging parameters across different data sources. These variations result in diverse image backgrounds and varying signal spot features. Conventional algorithms and parameter settings often fall short in accommodating the requirements of all these diverse image types. To overcome this limitation, we have devised a novel image enhancement approach based on the U-Net model, aimed at achieving a standardized output format for images.
 
 Key points about U-FISH:
@@ -55,6 +57,31 @@ Key points about U-FISH:
 pip install ufish
 ```
 
+CLI usage:
+
+```bash
+# list all sub-commands:
+$ python -m ufish
+
+# using --help to see details of each sub-command, e.g.:
+$ ufish predict --help
+
+# predict one image
+$ ufish predict input.tiff output.csv
+
+# predict all images in a directory
+$ ufish predict-imgs input_dir output_dir
+
+# load a trained model and predict
+$ ufish load-weights path/to/weights - predict-imgs input.tiff output.csv
+
+# training from scratch
+$ ufish train path/to/train_dir path/to/val_dir --model_save_dir path/to/save/model
+
+# training from a pre-trained model (fine-tuning)
+$ ufish load-weights path/to/weights - train path/to/train_dir path/to/val_dir --model_save_dir path/to/save/model
+```
+
 API for inference and evaluation:
 
 ```python
@@ -62,7 +89,9 @@ from skimage import io
 from ufish.api import UFish
 
 ufish = UFish()
-ufish.load_weights("path/to/weights")  # loading model weights
+
+# loading model weights, this step is optional
+ufish.load_weights("path/to/weights")
 # or download from huggingface:
 # ufish.load_weights_from_internet()
 
@@ -100,31 +129,6 @@ ufish.train(
     lr=1e-4,
     model_save_path='path/to/save/model',
 )
-```
-
-CLI usage:
-
-```bash
-# list all sub-commands:
-$ python -m ufish
-
-# using --help to see details of each sub-command, e.g.:
-$ ufish predict --help
-
-# predict one image
-$ ufish predict input.tiff output.csv
-
-# predict all images in a directory
-$ ufish predict-imgs input_dir output_dir
-
-# load a trained model and predict
-$ ufish load-weights path/to/weights - predict-imgs input.tiff output.csv
-
-# training from scratch
-$ ufish train path/to/train_dir path/to/val_dir --model_save_dir path/to/save/model
-
-# training from a pre-trained model (fine-tuning)
-$ ufish load-weights path/to/weights - train path/to/train_dir path/to/val_dir --model_save_dir path/to/save/model
 ```
 
 ## Dataset
