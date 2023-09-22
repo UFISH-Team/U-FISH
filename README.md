@@ -1,5 +1,11 @@
 # U-FISH 🎣
 
+<p>
+  <a href="https://pypi.org/project/ufish/">
+    <img src="https://img.shields.io/pypi/v/ufish.svg" alt="Install with PyPI" />
+  </a>
+</p>
+
 **Work in progress**
 
 U-FISH is an advanced FISH spot calling algorithm based on deep learning. The "U" in U-FISH represents both the U-Net architecture and the Unified output of enhanced images, underpinning our design philosophy. U-FISH has been developed to address the challenges posed by significant variations in experimental conditions, hybridization targets, and imaging parameters across different data sources. These variations result in diverse image backgrounds and varying signal spot features. Conventional algorithms and parameter settings often fall short in accommodating the requirements of all these diverse image types. To overcome this limitation, we have devised a novel image enhancement approach based on the U-Net model, aimed at achieving a standardized output format for images.
@@ -57,10 +63,10 @@ Key points about U-FISH:
 pip install ufish
 ```
 
-For inference using GPU:
+For inference using GPU, you need to install onnxruntime-gpu:
 
 ```bash
-pip install ufish[onnxruntime-gpu]
+pip install onnxruntime-gpu
 ```
 
 For training using GPU, you need to install PyTorch with CUDA support, see [PyTorch official website](https://pytorch.org/) for details.
