@@ -56,6 +56,9 @@ class UFish():
         elif model_type == 'spot_learn':
             from .model.network.spot_learn import SpotLearn
             self.model = SpotLearn(**kwargs)
+        elif model_type == 'det_net':
+            from .model.network.det_net import DetNet
+            self.model = DetNet(**kwargs)          
         else:
             raise ValueError(f'Unknown model type: {model_type}')
         params = sum(p.numel() for p in self.model.parameters())

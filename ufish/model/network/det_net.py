@@ -27,7 +27,7 @@ class custom_sigmoid(nn.Module):
 
 
 class DetNet(nn.Module):
-    def __init__(self, input_channel: int = 1, alpha=0.5):
+    def __init__(self, input_channel: int = 1, alpha: float = .0):
         super(DetNet, self).__init__()
 
         self.conv1 = ConvNorm(1, 16)
