@@ -49,7 +49,7 @@ Key points about U-FISH:
 - [ ] deploy
   + [x] setup.py
   + [x] upload model weights to huggingface
-  + [ ] upload package to PyPI
+  + [x] upload package to PyPI
   + [ ] Upload to BioImageIO model zoo
 - GUI
   + [ ] Napari plugin

@@ -44,6 +44,7 @@ class UFish():
         self.store_base_url = BASE_STORE_URL
         self.local_store_path = Path(
             os.path.expanduser(local_store_path))
+        self.weight_path: T.Optional[str] = None
 
     def init_model(
             self,
@@ -178,6 +179,7 @@ class UFish():
             path: The path to the weights file.
         """
         path = str(path)
+        self.weight_path = path
         if path.endswith('.pth'):
             self._load_pth_file(path)
         elif path.endswith('.onnx'):

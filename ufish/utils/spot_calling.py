@@ -5,7 +5,7 @@ import typing as T
 
 import numpy as np
 import pandas as pd
-from skimage.filters import threshold_otsu
+from skimage.filters import threshold_otsu, laplace
 from skimage.measure import label, regionprops
 from scipy import ndimage as ndi
 from skimage.feature import peak_local_max
@@ -93,6 +93,7 @@ def call_spots_local_maxima(
         enhanced_img: np.ndarray,
         connectivity: int = 2,
         intensity_threshold: float = 0.5,
+        laplace_process: bool = True,
         ) -> pd.DataFrame:
     """Call spots by finding the local maxima.
 
@@ -104,6 +105,8 @@ def call_spots_local_maxima(
     Returns:
         A pandas dataframe containing the spots.
     """
+    if laplace_process:
+        enhanced_img = laplace(enhanced_img)
     mask = local_maxima(enhanced_img, connectivity=connectivity)
     mask = mask & (enhanced_img > intensity_threshold)
     peaks = np.array(np.where(mask)).T
