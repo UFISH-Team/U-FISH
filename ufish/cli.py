@@ -11,7 +11,7 @@ class UFishCLI():
             self,
             cuda: bool = True,
             local_store_path: str = '~/.ufish/',
-            weights_file_name: str = 'v2.0-alldata-unet_d2_b32.onnx',
+            weights_file_name: T.Optional[str] = None,
             ):
         from .api import UFish
         self._ufish = UFish(
@@ -80,14 +80,12 @@ class UFishCLI():
             max_retry: The maximum number of retries to download the weights.
             force_download: Whether to force download the weights.
         """
-        if weights_path is not None:
-            self._ufish.load_weights(weights_path)
-        else:
-            self._ufish.load_weights_from_internet(
-                weights_file=weights_file,
-                max_retry=max_retry,
-                force_download=force_download,
-            )
+        self._ufish.load_weights(
+            weights_path=weights_path,
+            weights_file=weights_file,
+            max_retry=max_retry,
+            force_download=force_download,
+        )
         self._weights_loaded = True
         return self
 
@@ -125,7 +123,7 @@ class UFishCLI():
             axes: T.Optional[str] = None,
             blend_3d: bool = True,
             batch_size: int = 4,
-            spot_calling_method: str = 'local_maxima',
+            spots_calling_method: str = 'local_maxima',
             **kwargs,
             ):
         """Predict spots in image.
@@ -179,14 +177,14 @@ class UFishCLI():
                 axes=axes, blend_3d=blend_3d,
                 batch_size=batch_size,
                 chunk_size=chunk_size,
-                spots_calling_method=spot_calling_method,
+                spots_calling_method=spots_calling_method,
                 **kwargs)
         else:
             pred_df, enhanced = self._ufish.predict(
                 img, enh_img=enhanced,
                 axes=axes, blend_3d=blend_3d,
                 batch_size=batch_size,
-                spots_calling_method=spot_calling_method,
+                spots_calling_method=spots_calling_method,
                 **kwargs)
         pred_df.to_csv(output_csv_path, index=False)
         logger.info(f'Saved predicted spots to {output_csv_path}')
@@ -204,6 +202,7 @@ class UFishCLI():
             save_enhanced_img: bool = True,
             table_suffix: str = '.pred.csv',
             enhanced_suffix: str = '.enhanced.tif',
+            skip_enhance: bool = False,
             **kwargs,
             ):
         """Predict spots in a directory of 2d images.
@@ -218,6 +217,8 @@ class UFishCLI():
             save_enhanced_img: Whether to save the enhanced image.
             table_suffix: The suffix for the output table.
             enhanced_suffix: The suffix for the enhanced image.
+            skip_enhance: Whether to skip the enhancement,
+                when the enhanced image already exists.
             kwargs: Other arguments for predict function.
         """
         if not self._weights_loaded:
@@ -243,10 +244,14 @@ class UFishCLI():
             input_prefix = splitext(in_path.name)[0]
             output_path = out_dir_path / (input_prefix + table_suffix)
             enhanced_img_path = out_dir_path / (input_prefix + enhanced_suffix)
-            if enhanced_img_path.exists():
+            if skip_enhance and enhanced_img_path.exists():
                 logger.info(
                     f'Enhanced image {enhanced_img_path} exists, ' +
                     'skipping enhancement.')
+                if 'spots_calling_method' in kwargs:
+                    kwargs['method'] = kwargs.pop('spots_calling_method')
+                if 'batch_size' in kwargs:
+                    kwargs.pop('batch_size')
                 self.call_spots(
                     str(enhanced_img_path),
                     str(output_path),

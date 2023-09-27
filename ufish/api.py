@@ -1,4 +1,5 @@
 import os
+import os.path as osp
 import time
 import typing as T
 from pathlib import Path
@@ -16,12 +17,15 @@ if T.TYPE_CHECKING:
 
 
 BASE_STORE_URL = 'https://huggingface.co/GangCaoLab/U-FISH/resolve/main/'
+DEFAULT_WEIGHTS_FILE = 'v1.0-alldata-ufish_c32.onnx'
+STATC_STORE_PATH = osp.abspath(
+    osp.join(osp.dirname(__file__), "model/weights/"))
 
 
 class UFish():
     def __init__(
             self, cuda: bool = True,
-            default_weights_file: str = 'v2.0-alldata-unet_d2_b32.onnx',
+            default_weights_file: T.Optional[str] = None,
             local_store_path: str = '~/.ufish/'
             ) -> None:
         """
@@ -34,25 +38,29 @@ class UFish():
         self._infer_mode = False
         self.model: T.Optional["nn.Module"] = None
         self.ort_session: T.Optional["onnxruntime.InferenceSession"] = None
+        if default_weights_file is None:
+            default_weights_file = DEFAULT_WEIGHTS_FILE
         self.default_weights_file = default_weights_file
         self.store_base_url = BASE_STORE_URL
         self.local_store_path = Path(
             os.path.expanduser(local_store_path))
+        self.weight_path: T.Optional[str] = None
 
     def init_model(
             self,
-            model_type: str = 'unet',
+            model_type: str = 'ufish',
             **kwargs) -> None:
         """Initialize the model.
 
         Args:
-            model_type: The type of the model. 'unet' or 'fcn'.
+            model_type: The type of the model. For example,
+                'ufish', 'spot_learn', ...
             kwargs: Other arguments for the model.
         """
         import torch
-        if model_type == 'unet':
-            from .model.network.ufish_net import UNet
-            self.model = UNet(**kwargs)
+        if model_type == 'ufish':
+            from .model.network.ufish_net import UFishNet
+            self.model = UFishNet(**kwargs)
         elif model_type == 'spot_learn':
             from .model.network.spot_learn import SpotLearn
             self.model = SpotLearn(**kwargs)
@@ -161,9 +169,9 @@ class UFish():
             else:
                 raise RuntimeError(
                     f'Error downloading weights from {weight_url}.')
-        self.load_weights(local_weight_path)
+        self.load_weights_from_path(local_weight_path)
 
-    def load_weights(
+    def load_weights_from_path(
             self,
             path: T.Union[Path, str],
             ) -> None:
@@ -174,6 +182,7 @@ class UFish():
             path: The path to the weights file.
         """
         path = str(path)
+        self.weight_path = path
         if path.endswith('.pth'):
             self._load_pth_file(path)
         elif path.endswith('.onnx'):
@@ -181,6 +190,37 @@ class UFish():
         else:
             raise ValueError(
                 'Weights file must be a pth file or an onnx file.')
+
+    def load_weights(
+            self,
+            weights_path: T.Optional[str] = None,
+            weights_file: T.Optional[str] = None,
+            max_retry: int = 8,
+            force_download: bool = False,
+            ):
+        """Load weights from a local file or the internet.
+
+        Args:
+            weights_path: The path to the weights file.
+            weights_file: The name of the weights file on the internet.
+                See https://huggingface.co/GangCaoLab/U-FISH/tree/main
+                for available weights files.
+            max_retry: The maximum number of retries to download the weights.
+            force_download: Whether to force download the weights.
+        """
+        if weights_path is not None:
+            self.load_weights_from_path(weights_path)
+        else:
+            if weights_file is not None:
+                self.load_weights_from_internet(
+                    weights_file=weights_file,
+                    max_retry=max_retry,
+                    force_download=force_download,
+                )
+            else:
+                weights_path = osp.join(STATC_STORE_PATH, DEFAULT_WEIGHTS_FILE)
+                self.load_weights_from_path(weights_path)
+        return self
 
     def _load_pth_file(self, path: T.Union[Path, str]) -> None:
         """Load weights from a local file.
@@ -257,8 +297,13 @@ class UFish():
     def _enhance_img3d(
             self, img: np.ndarray, batch_size: int = 4) -> np.ndarray:
         """Enhance a 3D image."""
+        logger.info(
+            f'Enhancing 3D image in shape {img.shape}, '
+            f'batch size: {batch_size}')
         output = np.zeros_like(img, dtype=np.float32)
         for i in range(0, output.shape[0], batch_size):
+            logger.info(
+                f'Enhancing slice {i}-{i+batch_size}/{output.shape[0]}')
             _slice = img[i:i+batch_size][:, np.newaxis]
             output[i:i+batch_size] = self.infer(_slice)[:, 0]
         return output
@@ -282,10 +327,11 @@ class UFish():
                         'Image does not have a z axis, ' +
                         'cannot blend along z axis.')
                 from .utils.img import enhance_blend_3d
-                enh_func = partial(
-                    self._enhance_img3d, batch_size=batch_size)
+                logger.info(
+                    "Blending 3D image from 3 directions: z, y, x.")
                 output = enhance_blend_3d(
-                    img, enh_func, axes=axes)
+                    img, self._enhance_img3d, axes=axes,
+                    batch_size=batch_size)
             else:
                 output = self._enhance_img3d(img, batch_size=batch_size)
         else:
@@ -432,9 +478,9 @@ class UFish():
         """
         from .utils.img import (
             check_img_axes, chunks_iterator,
-            process_chunk_size)
+            process_chunk_size, infer_img_axes)
         if axes is None:
-            axes = self.infer_axes(img)
+            axes = infer_img_axes(img.shape)
         check_img_axes(img, axes)
         if chunk_size is None:
             from .utils.img import get_default_chunk_size
