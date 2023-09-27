@@ -469,9 +469,9 @@ class UFish():
         """
         from .utils.img import (
             check_img_axes, chunks_iterator,
-            process_chunk_size)
+            process_chunk_size, infer_img_axes)
         if axes is None:
-            axes = self.infer_axes(img)
+            axes = infer_img_axes(img.shape)
         check_img_axes(img, axes)
         if chunk_size is None:
             from .utils.img import get_default_chunk_size
