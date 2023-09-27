@@ -294,8 +294,13 @@ class UFish():
     def _enhance_img3d(
             self, img: np.ndarray, batch_size: int = 4) -> np.ndarray:
         """Enhance a 3D image."""
+        logger.info(
+            f'Enhancing 3D image in shape {img.shape}, '
+            f'batch size: {batch_size}')
         output = np.zeros_like(img, dtype=np.float32)
         for i in range(0, output.shape[0], batch_size):
+            logger.info(
+                f'Enhancing slice {i}-{i+batch_size}/{output.shape[0]}')
             _slice = img[i:i+batch_size][:, np.newaxis]
             output[i:i+batch_size] = self.infer(_slice)[:, 0]
         return output
@@ -319,10 +324,11 @@ class UFish():
                         'Image does not have a z axis, ' +
                         'cannot blend along z axis.')
                 from .utils.img import enhance_blend_3d
-                enh_func = partial(
-                    self._enhance_img3d, batch_size=batch_size)
+                logger.info(
+                    "Blending 3D image from 3 directions: z, y, x.")
                 output = enhance_blend_3d(
-                    img, enh_func, axes=axes)
+                    img, self._enhance_img3d, axes=axes,
+                    batch_size=batch_size)
             else:
                 output = self._enhance_img3d(img, batch_size=batch_size)
         else:

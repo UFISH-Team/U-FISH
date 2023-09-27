@@ -307,8 +307,9 @@ def chunks_iterator(
 
 def enhance_blend_3d(
         img: np.ndarray,
-        enh_func: T.Callable[[np.ndarray], np.ndarray],
+        enh_func: T.Callable[[np.ndarray, int], np.ndarray],
         axes: str,
+        batch_size: int = 4,
         ) -> np.ndarray:
     """Run enhancement along 3 directions and blend the results.
 
@@ -316,15 +317,27 @@ def enhance_blend_3d(
         enh_func: Enhancement function.
         img: Image to enhance.
         axes: Axes of the image.
+        batch_size: Batch size for enhancement.
     """
     if axes != 'zyx':
         # move z to the first axis
         z_idx = axes.index('z')
         img = np.moveaxis(img, z_idx, 0)
-    enh_z = enh_func(img)
-    enh_y = enh_func(np.moveaxis(img, 1, 0))
+    enh_z = enh_func(img, batch_size)
+    zimg_size = np.array(img.shape[1:]).prod()
+
+    img_y = np.moveaxis(img, 1, 0)
+    yimg_size = np.array(img_y.shape[1:]).prod()
+    factor_y = int(zimg_size / yimg_size)
+    bz_y = max(batch_size * factor_y, 1)
+    enh_y = enh_func(img_y, bz_y)
     enh_y = np.moveaxis(enh_y, 0, 1)
-    enh_x = enh_func(np.moveaxis(img, 2, 0))
+
+    img_x = np.moveaxis(img, 2, 0)
+    ximg_size = np.array(img_x.shape[1:]).prod()
+    factor_x = int(zimg_size / ximg_size)
+    bz_x = max(batch_size * factor_x, 1)
+    enh_x = enh_func(img_x, bz_x)
     enh_x = np.moveaxis(enh_x, 0, 2)
     enh_img = enh_z * enh_y * enh_x
     return enh_img
