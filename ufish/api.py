@@ -117,6 +117,7 @@ class UFish():
         if self._infer_mode:
             return
         self._infer_mode = True
+        assert self.model is not None
         self.model.eval()
         if trace_model:
             import torch
@@ -270,6 +271,7 @@ class UFish():
     def _infer_torch(self, img: np.ndarray) -> np.ndarray:
         """Infer the image using the torch model."""
         self._turn_on_infer_mode()
+        assert self.model is not None
         import torch
         tensor = torch.from_numpy(img).float()
         if self.cuda:
@@ -281,6 +283,7 @@ class UFish():
 
     def _infer_onnx(self, img: np.ndarray) -> np.ndarray:
         """Infer the image using the ONNX model."""
+        assert self.ort_session is not None
         ort_inputs = {self.ort_session.get_inputs()[0].name: img}
         ort_outs = self.ort_session.run(None, ort_inputs)
         output = ort_outs[0]
@@ -349,6 +352,7 @@ class UFish():
             kwargs: Other arguments for the spot calling function.
         """
         assert enhanced_img.ndim in (2, 3), 'Image must be 2D or 3D.'
+        call_func: T.Callable
         if method == 'cc_center':
             from .utils.spot_calling import call_spots_cc_center as call_func
         else:
@@ -534,7 +538,7 @@ class UFish():
             pred: pd.DataFrame,
             true: pd.DataFrame,
             cutoff: float = 3.0,
-            ) -> float:
+            ) -> dict:
         """Calculate the F1 score of the prediction result.
 
         Args:
@@ -662,7 +666,7 @@ class UFish():
             root_dir = root_dir_path or _path.parent
             logger.info(f'Data root directory: {root_dir}')
             dataset = FISHSpotsDataset.from_meta_csv(
-                root_dir=root_dir, meta_csv_path=str(_path),
+                root_dir=str(root_dir), meta_csv_path=str(_path),
                 process_func=process_func, transform=transform)
         return dataset
 
@@ -731,6 +735,7 @@ class UFish():
             transform = None
 
         logger.info(f'Using {target_process} as target process.')
+        process_func: T.Optional[T.Callable] = None
         if target_process == 'gaussian':
             process_func = FISHSpotsDataset.gaussian_filter
         elif target_process == 'dialation':
@@ -740,8 +745,6 @@ class UFish():
             process_func = partial(
                 FISHSpotsDataset.dialate_mask,
                 footprint=target_process)
-        else:
-            process_func = None
 
         logger.info(f"Loading training dataset from {train_path}")
         train_dataset = self._load_dataset(

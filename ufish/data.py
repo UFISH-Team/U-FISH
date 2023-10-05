@@ -103,7 +103,7 @@ class DirReader(Reader):
         img_path = self.img_paths[idx]
         coord_path = self.coord_paths[idx]
         image = imread(img_path)
-        coords = self.read_coords(coord_path, image.ndim)
+        coords = self.read_coords(str(coord_path), image.ndim)
         sample = {'image': image, 'coords': coords}
         return sample
 

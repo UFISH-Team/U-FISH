@@ -166,7 +166,7 @@ class UFishCLI():
         logger.info(f'Predicting {input_img_path}')
         img = open_for_read(input_img_path)
         enhanced, tmp_ehn_path = open_enhimg_storage(
-            enhanced_output_path, img.shape)
+            str(enhanced_output_path), img.shape)
         if axes is None:
             logger.info("Axes not specified, infering from image shape.")
             axes = infer_img_axes(img.shape)
@@ -224,6 +224,8 @@ class UFishCLI():
         if not self._weights_loaded:
             self.load_weights()
         if input_path.endswith('.csv'):
+            assert data_base_dir is not None, \
+                'data_base_dir must be specified when input_path is a csv.'
             import pandas as pd
             meta_df = pd.read_csv(input_path)
             base_dir = Path(data_base_dir)
@@ -382,7 +384,7 @@ class UFishCLI():
         common_names = set([p.name.split('.')[0] for p in pred_csvs]) & \
             set([p.name.split('.')[0] for p in true_csvs])
         logger.info(f'Evaluating {len(common_names)} images')
-        out = {
+        out: dict = {
             'true_csv': [],
             'pred_csv': [],
             'source': [],
