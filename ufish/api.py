@@ -233,6 +233,7 @@ class UFish():
         device = torch.device('cuda' if self.cuda else 'cpu')
         state_dict = torch.load(path, map_location=device)
         self.model.load_state_dict(state_dict)
+        self.ort_session = None
 
     def _load_onnx(
             self,
@@ -255,6 +256,7 @@ class UFish():
             providers = providers or ['CPUExecutionProvider']
         self.ort_session = onnxruntime.InferenceSession(
             onnx_path, providers=providers)
+        self.model = None
 
     def infer(self, img: np.ndarray) -> np.ndarray:
         """Infer the image using the U-Net model."""

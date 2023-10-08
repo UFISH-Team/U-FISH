@@ -10,13 +10,15 @@
 
 U-FISH is an advanced FISH spot calling algorithm based on deep learning. The "U" in U-FISH represents both the U-Net architecture and the Unified output of enhanced images, underpinning our design philosophy. U-FISH has been developed to address the challenges posed by significant variations in experimental conditions, hybridization targets, and imaging parameters across different data sources. These variations result in diverse image backgrounds and varying signal spot features. Conventional algorithms and parameter settings often fall short in accommodating the requirements of all these diverse image types. To overcome this limitation, we have devised a novel image enhancement approach based on the U-Net model, aimed at achieving a standardized output format for images.
 
+![title](./docs/ufish.png)
+
 Key points about U-FISH:
 
-1. U-FISH was trained and tested on a diverse dataset comprising 4000+ images with approximately 1.6 million targets from seven sources, including 2 simulated datasets and 5 real datasets. This extensive training resulted in achieving state-of-the-art performance.
-2. The network architecture has been optimized to achieve this level of performance with a compact model size of only 160k parameters. The ONNX file of the model is only about 680kB in size, making it suitable for inference on edge devices.
-3. U-FISH addresses a limitation of other deep learning-based spot calling algorithms by successfully handling 3D data, overcoming a significant drawback in this field.
-4. It offers support for large-scale data storage formats such as OME-Zarr and N5, enhancing its versatility and applicability.
-5. U-FISH provides a user-friendly interface through APIs, a command-line interface (CLI), a Napari plugin, and an online application, enhancing accessibility and ease of use.
+1. Diverse dataset: 4000+ images with approximately 1.6 million targets from seven sources, including 2 simulated datasets and 5 real datasets.
+2. Small model: Achieve state-of-the-art performace with only 160k parameters (ONNX file size: 680kB).
+3. 3D support: Support detection FIHS spots in 3D images.
+4. Scalability: Support large-scale data storage formats: OME-Zarr and N5.
+5. User-friendly interface: API, CLI, [Napari plugin](https://github.com/UFISH-Team/napari-ufish), and [web application](https://github.com/UFISH-Team/ufish-web).
 
 
 ## TODO List
