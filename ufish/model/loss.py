@@ -60,3 +60,23 @@ class DiceCoefLoss(nn.Module):
 
     def forward(self, y_hat, y):
         return - self._dice_coef(y, y_hat)
+    
+class DicesoftLoss(nn.Module):
+    def __init__(self, eps=1e-7):
+        super().__init__()
+        self.eps = eps
+    
+    def _soft_dice(self, true, pred):
+        true = torch.flatten(true)
+        pred = torch.flatten(pred)
+
+        multed = torch.sum(pred * true)
+        summed = torch.sum(pred + true)
+        dices = 2. * ((multed + self.eps) / (summed + self.eps))
+        return dices
+    
+    def forward(self, y_hat, y):
+        return - self._soft_dice(y, y_hat)
+
+
+
