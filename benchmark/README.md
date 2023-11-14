@@ -3,30 +3,29 @@
 ## Table of Contents
 
 1. [Introduction](#introduction)
-2. [U-FISH](#u-fish)
-3. [deepBlink](#deepblink)
-4. [SpotLearn](#spotlearn)
-5. [DetNet](#detnet)
-7. [Big-FISH](#big-fish)
-8. [RS-FISH](#rs-fish)
-9. [Starfish](#starfish)
-10. [TrackMate](#trackmate)
+2. [Deep Learning methods](#deep learning methods)
+3. [Ruled-based methods](#rule-based methods)
+
 
 
 ## Introduction
 
-## U-FISH
+## Deep Learning methods
 
-## deepBlink
+**U-FISH**
 
-## SpotLearn
+**deepBlink**
 
-## DetNet
+**SpotLearn**
 
-## Big-FISH
+**DetNet**
 
-## RS-FISH
+## Rule-based methods
 
-## Starfish
+**Big-FISH**
 
-## TrackMate
+**RS-FISH**
+
+**Starfish**
+
+**TrackMate**
