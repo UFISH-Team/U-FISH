@@ -12,21 +12,21 @@
 
 ## Deep Learning methods
 
-**U-FISH**
+### U-FISH
 
-**deepBlink**
+### deepBlink
 
-**SpotLearn**
+### SpotLearn
 
-**DetNet**
+### DetNet
 
 ## Rule-based methods
 
-**Big-FISH**
+### Big-FISH
 
-**RS-FISH**
+### RS-FISH
 
-**Starfish**
+### Starfish
 
-**TrackMate**
+### TrackMate
 
