@@ -269,10 +269,7 @@ def process_im(im, sigma, voxel_size_z, voxel_size_yx, psf_z, psf_yx, im_path, d
     thrs_to_use = all_thrs[thrs_to_use_idxs]
 
     ## Iterate thresholds
-
-    # So we won't run the same spots found - if two or more thresholds have same # of spots
-    # Only one is ran.
-    n_spots = []
+    
     ## GRID PARAMETER
     for threshold in thrs_to_use:
 

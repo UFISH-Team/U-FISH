@@ -231,10 +231,7 @@ def process_im(im, sigma, voxel_size_yx, psf_yx, im_path, thr_range, gamma_range
     thrs_to_use = all_thrs[thrs_to_use_idxs]
 
     ## Iterate thresholds
-
-    # So we won't run the same spots found - if two or more thresholds have same # of spots
-    # Only one is ran.
-    n_spots = []
+    
     ## GRID PARAMETER
     for threshold in thrs_to_use:
 
@@ -247,19 +244,10 @@ def process_im(im, sigma, voxel_size_yx, psf_yx, im_path, thr_range, gamma_range
 
         thr_n_spots = spots.shape[0]
 
-        if (thr_n_spots not in n_spots):
-            n_spots.append(thr_n_spots)
-
-            conditions_str = (f'BF_{os.path.basename(im_path)}'
+        conditions_str = (f'BF_{os.path.basename(im_path)}'
                           f'_sigyx{sigma[0]}thr{threshold:.3f}')
 
             print(f'sigma={sigma} threshold={threshold:.3f}, detected #spots={spots.shape[0]}', flush=True)
-
-            ## save the spots (int)
-            df = pd.DataFrame(data=spots, columns=["axis-0", "axis-1"])
-            df_path = os.path.join(os.path.dirname(csv_path),
-                                    (f'{conditions_str}_direct_spots.csv'))
-            df.to_csv(df_path, index=False)
 
         ### Dense region decomposition:
 
@@ -278,8 +266,11 @@ def process_im(im, sigma, voxel_size_yx, psf_yx, im_path, thr_range, gamma_range
                             alpha=alpha,  # alpha impacts the number of spots per candidate region
                             beta=beta,  # beta impacts the number of candidate regions to decompose
                             gamma=gamma)  # gamma the filtering step to denoise the image
-                        if spots_post_decomposition.shape[0] < thr_n_spots:
-                            print('#spots after decomposition < #spots before. Not saving results.')
+                        if spots_post_decomposition.shape[0] < thr_n_spots:          
+                            df = pd.DataFrame(data=spots, columns=["axis-0", "axis-1"])
+                            df_path = os.path.join(os.path.dirname(csv_path),
+                                                    (f'{conditions_str}_direct_spots.csv'))
+                            df.to_csv(df_path, index=False)
                         else:
                             df = pd.DataFrame(data=spots_post_decomposition, columns=["axis-0", "axis-1"])
                             df_path = os.path.join(os.path.dirname(csv_path),

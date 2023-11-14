@@ -11,7 +11,7 @@ for size in sizes:
 
         os.makedirs(target_dir, exist_ok=True)
 
-        ufish_command = (f"/home/hycai/.conda/envs/spotlearn/bin/python  -m  ufish - set_logger ./spotlearn_metrics/"$target_process"/spot_learn_b2_2.log - init-model --model-type 'spot_learn' - train ../meta_train.csv ../meta_valid.csv --root-dir ./FISH_spots --model_save_dir ./spotlearn_metrics/"$target_process" --num_epochs 150 --batch_size 2 --loader-workers=4 --loss-type 'DiceRMSELoss' --lr 1e-5 --target-process "${target_process}"
+        ufish_command = (f".conda/envs/spotlearn/bin/python  -m  ufish - set_logger ./spotlearn_metrics/"$target_process"/spot_learn_b2_2.log - init-model --model-type 'spot_learn' - train ../meta_train.csv ../meta_valid.csv --root-dir ./FISH_spots --model_save_dir ./spotlearn_metrics/"$target_process" --num_epochs 150 --batch_size 2 --loader-workers=4 --loss-type 'DiceRMSELoss' --lr 1e-5 --target-process "${target_process}"
 
 ")
 
