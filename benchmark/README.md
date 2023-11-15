@@ -21,9 +21,11 @@ Unless specifically stated otherwise, the parameters mentioned above are used to
 
 ## Deep Learning methods
 
+
 **U-FISH & deepBlink**
 
 Evaluation of U-FISH and DeepBlink was carried out with default parameters. Despite conducting hyperparameter grid searches, significant improvements were not observed, so we retained the default settings.
+
 
 
 **SpotLearn & DetNet**
@@ -32,6 +34,7 @@ For a precise assessment of DetNet and SpotLearn, both networks were implemented
 
 
 ## Rule-based methods
+
 
 **Big-FISH**
 
@@ -43,6 +46,7 @@ We employ dense region decomposition for spot detection. As Big-FISH calculates 
                     Alpha: 0.5-0.8, step size += 0.1
                     Beta: 0.8-1.2, step size += 0.1
                     Gamma: 4-6, step size += 0.5
+
   
 
 **RS-FISH**
@@ -57,6 +61,7 @@ Given that RS-FISH possesses a parameter known as intensityThreshold, the select
                     MaxError: 1.5000
                     IntensityThreshold: [0, 10, 50, 100, 150, 200, 255]
 
+
   
 **Starfish**
 
@@ -65,6 +70,7 @@ Given that RS-FISH possesses a parameter known as intensityThreshold, the select
   
                     Sigma = 1-6, step size += 1
                     Threshold = 0.000095-0.15, step size += 0.00005
+
 
   
 **TrackMate**
