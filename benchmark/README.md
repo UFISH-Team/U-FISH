@@ -26,7 +26,7 @@ Unless specifically stated otherwise, the parameters mentioned above are used to
 Evaluation of U-FISH and DeepBlink was carried out with default parameters. Despite conducting hyperparameter grid searches, significant improvements were not observed, so we retained the default settings.
 
 
-**SpotLearn & DetNe**
+**SpotLearn & DetNet**
 
 For a precise assessment of DetNet and SpotLearn, both networks were implemented in the PyTorch framework, following the methods outlined in their respective research papers. We also undertook grid searches for DetNet's linearly distributed sigmoid shifts parameter $\alpha$ and SpotLearn's target process parameter during training. To ensure comprehensiveness, ten different values of alpha and six different values for target process were considered.
 
