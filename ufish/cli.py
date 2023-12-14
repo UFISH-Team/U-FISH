@@ -9,13 +9,22 @@ from .utils.log import logger
 class UFishCLI():
     def __init__(
             self,
-            cuda: bool = True,
+            device: T.Optional[T.Literal['cpu', 'cuda', 'dml']] = None,
             local_store_path: str = '~/.ufish/',
             weights_file_name: T.Optional[str] = None,
             ):
+        """
+        Args:
+            device: The device to use for training.
+                'cpu' or 'cuda' or 'dml'.
+                If None, will use 'cuda' if available, otherwise 'cpu'.
+                'dml' is for using AMD GPUs on Windows.
+            default_weight_file: The default weight file to use.
+            local_store_path: The local path to store the weights.
+        """
         from .api import UFish
         self._ufish = UFish(
-            cuda=cuda,
+            device=device,
             default_weights_file=weights_file_name,
             local_store_path=local_store_path,
         )
@@ -469,7 +478,7 @@ class UFishCLI():
             num_epochs: int = 50,
             batch_size: int = 8,
             lr: float = 1e-3,
-            summary_dir: str = "runs/unet",
+            summary_dir: str = "runs/ufish",
             model_save_dir: str = "./models",
             save_period: int = 5,
             ):

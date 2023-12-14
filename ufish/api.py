@@ -3,7 +3,8 @@ import os.path as osp
 import time
 import typing as T
 from pathlib import Path
-from functools import partial
+import importlib
+from functools import partial, cached_property
 
 import numpy as np
 import pandas as pd
@@ -11,6 +12,7 @@ import pandas as pd
 from .utils.log import logger
 
 if T.TYPE_CHECKING:
+    import torch
     from torch import nn
     from matplotlib.figure import Figure
     import onnxruntime
@@ -24,17 +26,24 @@ STATC_STORE_PATH = osp.abspath(
 
 class UFish():
     def __init__(
-            self, cuda: bool = True,
+            self,
+            device: T.Union[
+                None,
+                T.Literal['cpu', 'cuda', 'dml'],
+                "torch.device"] = None,
             default_weights_file: T.Optional[str] = None,
             local_store_path: str = '~/.ufish/'
             ) -> None:
         """
         Args:
-            cuda: Whether to use GPU.
+            device: The device to use for training.
+                'cpu' or 'cuda' or 'dml'.
+                If None, will use 'cuda' if available, otherwise 'cpu'.
+                'dml' is for using AMD GPUs on Windows.
             default_weight_file: The default weight file to use.
             local_store_path: The local path to store the weights.
         """
-        self._cuda = cuda
+        self._device = device
         self._infer_mode = False
         self.model: T.Optional["nn.Module"] = None
         self.ort_session: T.Optional["onnxruntime.InferenceSession"] = None
@@ -45,6 +54,45 @@ class UFish():
         self.local_store_path = Path(
             os.path.expanduser(local_store_path))
         self.weight_path: T.Optional[str] = None
+
+    @cached_property
+    def device(self) -> "torch.device":
+        """Get the torch device."""
+        return self._get_torch_device()
+
+    def _get_torch_device(self) -> "torch.device":
+        """Get the torch device."""
+        import torch
+        if isinstance(self._device, torch.device):
+            device = self._device
+            self._device = device.type
+            return device
+        if self._device is None:
+            if torch.cuda.is_available():
+                self._device = 'cuda'
+            elif os.name == 'nt':
+                try:
+                    importlib.import_module('torch_directml')
+                    logger.info(
+                        "Using DirectML for training on Windows.")
+                    self._device = 'dml'
+                except Exception:
+                    self._device = 'cpu'
+            else:
+                self._device = 'cpu'
+        if self._device == "cuda":
+            if torch.cuda.is_available():
+                return torch.device('cuda')
+            else:
+                logger.warning(
+                    "CUDA is not available, using CPU instead.")
+                return torch.device('cpu')
+        elif self._device == "dml":
+            import torch_directml
+            dml = torch_directml.device()
+            return dml
+        else:
+            return torch.device(self._device)
 
     def init_model(
             self,
@@ -57,7 +105,6 @@ class UFish():
                 'ufish', 'spot_learn', ...
             kwargs: Other arguments for the model.
         """
-        import torch
         if model_type == 'ufish':
             from .model.network.ufish_net import UFishNet
             self.model = UFishNet(**kwargs)
@@ -66,23 +113,14 @@ class UFish():
             self.model = SpotLearn(**kwargs)
         elif model_type == 'det_net':
             from .model.network.det_net import DetNet
-            self.model = DetNet(**kwargs)          
+            self.model = DetNet(**kwargs)
         else:
             raise ValueError(f'Unknown model type: {model_type}')
         params = sum(p.numel() for p in self.model.parameters())
         logger.info(
             f'Initializing {model_type} model with kwargs: {kwargs}')
         logger.info(f'Number of parameters: {params}')
-        self.cuda = False
-        if self._cuda:
-            if torch.cuda.is_available():
-                self.model = self.model.cuda()
-                self.cuda = True
-                logger.info('CUDA is available, using GPU.')
-            else:
-                logger.warning('CUDA is not available, using CPU.')
-        else:
-            logger.info('CUDA is not used, using CPU.')
+        self.model = self.model.to(self.device)
 
     def convert_to_onnx(
             self,
@@ -100,8 +138,7 @@ class UFish():
         output_path = str(output_path)
         logger.info(
             f'Converting model to ONNX format, saving to {output_path}')
-        device = torch.device('cuda' if self.cuda else 'cpu')
-        inp = torch.rand(1, 1, 512, 512).to(device)
+        inp = torch.rand(1, 1, 512, 512).to(self.device)
         dyn_axes = {0: 'batch_size', 2: 'y', 3: 'x'}
         torch.onnx.export(
             self.model, inp, output_path,
@@ -234,8 +271,7 @@ class UFish():
         assert self.model is not None
         path = str(path)
         logger.info(f'Loading weights from {path}')
-        device = torch.device('cuda' if self.cuda else 'cpu')
-        state_dict = torch.load(path, map_location=device)
+        state_dict = torch.load(path, map_location=self.device)
         self.model.load_state_dict(state_dict)
         self.ort_session = None
 
@@ -254,8 +290,10 @@ class UFish():
         import onnxruntime
         onnx_path = str(onnx_path)
         logger.info(f'Loading ONNX from {onnx_path}')
-        if self._cuda:
+        if self._device == 'cuda':
             providers = providers or ['CUDAExecutionProvider']
+        elif self._device == 'dml':
+            providers = providers or ['DmlExecutionProvider']
         else:
             providers = providers or ['CPUExecutionProvider']
         self.ort_session = onnxruntime.InferenceSession(
@@ -690,7 +728,7 @@ class UFish():
             num_epochs: int = 50,
             batch_size: int = 8,
             lr: float = 1e-3,
-            summary_dir: str = "runs/unet",
+            summary_dir: str = "runs/ufish",
             model_save_dir: str = "./models",
             save_period: int = 5,
             ):
@@ -775,6 +813,7 @@ class UFish():
         train_on_dataset(
             self.model,
             train_dataset, valid_dataset,
+            device=self.device,
             loss_type=loss_type,
             loader_workers=loader_workers,
             num_epochs=num_epochs,

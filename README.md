@@ -8,7 +8,6 @@ U-FISH is an advanced FISH spot calling algorithm based on deep learning. The "U
   </a>
 </p>
 
-
 ![title](./docs/ufish.png)
 
 U-FISH has been developed to address the challenges posed by significant variations in experimental conditions, hybridization targets, and imaging parameters across different data sources. These variations result in diverse image backgrounds and varying signal spot features. Conventional algorithms and parameter settings often fall short in accommodating the requirements of all these diverse image types. To overcome this limitation, we have devised a novel image enhancement approach based on the U-Net model, aimed at achieving a standardized output format for images.
@@ -20,8 +19,6 @@ Key points about U-FISH:
 3. 3D support: Support detection FIHS spots in 3D images.
 4. Scalability: Support large-scale data storage formats: OME-Zarr and N5.
 5. User-friendly interface: API, CLI, [Napari plugin](https://github.com/UFISH-Team/napari-ufish), and [web application](https://github.com/UFISH-Team/ufish-web).
-
-
 
 ## Installation
 
@@ -35,7 +32,17 @@ For inference using GPU, you need to install onnxruntime-gpu:
 pip install onnxruntime-gpu
 ```
 
+### GPU support
+
 For training using GPU, you need to install PyTorch with CUDA support, see [PyTorch official website](https://pytorch.org/) for details.
+
+#### Windows and AMD GPU
+
+If you are using Windows and AMD GPU, you need to install:
+
+```bash
+pip install torch-directml
+```
 
 ## Usage
 
@@ -128,37 +135,37 @@ git clone https://huggingface.co/datasets/GangCaoLab/FISH_spots
 **Work in progress**
 
 - [x] API
-  + [x] Inference
-  + [x] Evaluation
-  + [x] Plotting tool for show TP, FP, FN
-  + [x] Training
+  - [x] Inference
+  - [x] Evaluation
+  - [x] Plotting tool for show TP, FP, FN
+  - [x] Training
 - [x] CLI
-  + [x] Inference
-  + [x] Evaluation
-  + [x] Plotting tool for show TP, FP, FN
-  + [x] Training
+  - [x] Inference
+  - [x] Evaluation
+  - [x] Plotting tool for show TP, FP, FN
+  - [x] Training
 - [x] Add more datasets
-  + [x] ExSeq
-  + [x] MER-FISH
-  + [x] seqFISH
+  - [x] ExSeq
+  - [x] MER-FISH
+  - [x] seqFISH
 - [x] Try other signal footprint
-  + [x] Gaussian
-  + [x] Single pixel prediction
+  - [x] Gaussian
+  - [x] Single pixel prediction
 - [x] Support for multi-channel images.
 - [x] 3D integration method
-  + [x] Stack 2D UEI to 3D, then apply local maxima.
-  + [x] 3D blending: apply to xy, xz, yz planes, then blend.
+  - [x] Stack 2D UEI to 3D, then apply local maxima.
+  - [x] 3D blending: apply to xy, xz, yz planes, then blend.
 - [x] Support for image chunks and zarr file format.
-  + [x] Inference chunk by chunk.
-  + [x] Read image from zarr/n5/ome-zarr file.
-  + [x] Write UEI to zarr/n5/ome-zarr file.
+  - [x] Inference chunk by chunk.
+  - [x] Read image from zarr/n5/ome-zarr file.
+  - [x] Write UEI to zarr/n5/ome-zarr file.
 - [ ] deploy
-  + [x] setup.py
-  + [x] upload model weights to huggingface
-  + [x] upload package to PyPI
-  + [ ] Upload to BioImageIO model zoo
+  - [x] setup.py
+  - [x] upload model weights to huggingface
+  - [x] upload package to PyPI
+  - [ ] Upload to BioImageIO model zoo
 - GUI
-  + [x] Napari plugin
-  + [ ] Web page
+  - [x] Napari plugin
+  - [ ] Web page
 - [ ] Benchmarks
 - [ ] Documentation

@@ -122,12 +122,13 @@ def train_on_dataset(
         model: torch.nn.Module,
         train_dataset: FISHSpotsDataset,
         valid_dataset: FISHSpotsDataset,
+        device: T.Optional[torch.device] = None,
         loss_type: str = "DiceRMSELoss",
         loader_workers: int = 4,
         num_epochs: int = 50,
         batch_size: int = 8,
         lr: float = 1e-4,
-        summary_dir: str = "runs/unet",
+        summary_dir: str = "runs/ufish",
         model_save_dir: str = "./models",
         save_period: int = 5,
         ):
@@ -137,6 +138,7 @@ def train_on_dataset(
         model: The model to train.
         train_dataset: The training dataset.
         valid_dataset: The validation dataset.
+        device: The device to use.
         loss_type: The loss function to use.
         loader_workers: The number of workers to use for the data loader.
         num_epochs: The number of epochs to train for.
@@ -161,7 +163,8 @@ def train_on_dataset(
         valid_dataset, batch_size=batch_size,
         shuffle=False, num_workers=loader_workers)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info(f"Training using device: {device}")
     model = model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)

@@ -140,7 +140,12 @@ class FISHSpotsDataset(Dataset):
             mask: np.ndarray,
             footprint: str = 'disk(2)'
             ) -> np.ndarray:
-        """Dialate the mask."""
+        """Dialate the mask.
+
+        Args:
+            mask: The mask to dialate.
+            footprint: The footprint to use for dialation.
+        """
         _footprint = eval(f"morphology.{footprint}")
         return dilation(mask, footprint=_footprint)
 
@@ -162,6 +167,12 @@ class FISHSpotsDataset(Dataset):
             self, coords: np.ndarray,
             shape: T.Tuple[int, int],
             ) -> np.ndarray:
+        """Convert coordinates to target image.
+
+        Args:
+            coords: The coordinates to convert.
+            shape: The shape of the target image.
+        """
         mask = np.zeros(shape, dtype=np.float32)
         # remove out-of-bound coordinates
         c = coords
