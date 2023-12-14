@@ -79,8 +79,10 @@ from ufish.api import UFish
 
 ufish = UFish()
 
-# loading model weights, this step is optional
-ufish.load_weights("path/to/weights")
+# loading model weights
+ufish.load_weights()
+# or from a file
+# ufish.load_weights("path/to/weights")
 # or download from huggingface:
 # ufish.load_weights_from_internet()
 
