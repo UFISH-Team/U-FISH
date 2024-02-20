@@ -168,6 +168,6 @@ git clone https://huggingface.co/datasets/GangCaoLab/FISH_spots
   - [ ] Upload to BioImageIO model zoo
 - GUI
   - [x] Napari plugin
-  - [ ] Web page
-- [ ] Benchmarks
+  - [x] Web page
+- [x] Benchmarks
 - [ ] Documentation
