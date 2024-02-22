@@ -46,7 +46,11 @@ pip install torch-directml
 
 ## Usage
 
-CLI usage:
+Fine-tuning example in colab:  <a target="_blank" href="https://colab.research.google.com/github/UFISH-Team/U-FISH/blob/main/notebooks/ufish_finetune.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a>
+
+### CLI usage
 
 ```bash
 # list all sub-commands:
@@ -70,6 +74,8 @@ $ ufish train path/to/train_dir path/to/val_dir --model_save_dir path/to/save/mo
 # training from a pre-trained model (fine-tuning)
 $ ufish load-weights path/to/weights - train path/to/train_dir path/to/val_dir --model_save_dir path/to/save/model
 ```
+
+### API usage
 
 API for inference and evaluation:
 
