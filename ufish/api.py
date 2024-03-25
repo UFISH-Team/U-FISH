@@ -317,7 +317,7 @@ class UFish():
         assert self.model is not None
         import torch
         tensor = torch.from_numpy(img).float()
-        if self.cuda:
+        if self.device.type == 'cuda':
             tensor = tensor.cuda()
         with torch.no_grad():
             output = self.model(tensor)
