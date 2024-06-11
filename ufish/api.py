@@ -359,8 +359,8 @@ class UFish():
             blend_3d: bool = False,
             ) -> np.ndarray:
         """Enhance a 2D or 3D image."""
-        from .utils.img import scale_image
-        img = scale_image(img, warning=True)
+        if not np.issubdtype(img.dtype, np.float32):
+            img = img.astype(np.float32)
         if img.ndim == 2:
             output = self._enhance_img2d(img)
         elif img.ndim == 3:
@@ -408,12 +408,16 @@ class UFish():
             blend_3d: bool = False,
             batch_size: int = 4,
             spots_calling_method: str = 'local_maxima',
+            is_scale_image: bool = True,
             **kwargs,
             ) -> T.Tuple[pd.DataFrame, np.ndarray]:
         """Predict the spots in a 2D or 3D image. """
         assert img.ndim in (2, 3), 'Image must be 2D or 3D.'
         assert len(axes) == img.ndim, \
             "axes and image dimension must have the same length"
+        if is_scale_image:
+            from .utils.img import scale_image
+            img = scale_image(img, warning=True)
         enhanced_img = self._enhance_2d_or_3d(
             img, axes,
             batch_size=batch_size,
@@ -432,6 +436,7 @@ class UFish():
             blend_3d: bool = True,
             batch_size: int = 4,
             spots_calling_method: str = 'local_maxima',
+            is_scale_image: bool = True,
             **kwargs,
             ) -> T.Tuple[pd.DataFrame, np.ndarray]:
         """Predict the spots in an image.
@@ -454,6 +459,7 @@ class UFish():
             batch_size: The batch size for inference.
                 Used only when the image dimension is 3 or higher.
             spots_calling_method: The method to use for spot calling.
+            is_scale_image: Whether to scale the image to 0-255.
             kwargs: Other arguments for the spot calling function.
         """
         from .utils.img import (
@@ -472,6 +478,7 @@ class UFish():
             blend_3d=blend_3d,
             batch_size=batch_size,
             spots_calling_method=spots_calling_method,
+            is_scale_image=is_scale_image,
             **kwargs,
             )
         df, enhanced_img = map_predfunc_to_img(
@@ -489,6 +496,7 @@ class UFish():
             batch_size: int = 4,
             chunk_size: T.Optional[T.Tuple[T.Union[int, str], ...]] = None,
             spots_calling_method: str = 'local_maxima',
+            scale_whole_img: bool = True,
             **kwargs,
             ):
         """Predict the spots in an image chunk by chunk.
@@ -518,11 +526,13 @@ class UFish():
                 ('image', 'image', 'image', 512, 512) for a 5D image.
                 If None, will use the default chunk size.
             spots_calling_method: The method to use for spot calling.
+            scale_whole_img: Whether to scale the whole image.
+                If True, will scale the whole image to 0-255.
             kwargs: Other arguments for the spot calling function.
         """
         from .utils.img import (
             check_img_axes, chunks_iterator,
-            process_chunk_size, infer_img_axes)
+            process_chunk_size, infer_img_axes, scale_image)
         if axes is None:
             axes = infer_img_axes(img.shape)
         check_img_axes(img, axes)
@@ -535,6 +545,8 @@ class UFish():
         total_dfs = []
         if enh_img is None:
             enh_img = np.zeros_like(img, dtype=np.float32)
+        if scale_whole_img:
+            img = scale_image(img, warning=True)
         for c_range, chunk in chunks_iterator(img, chunk_size):
             logger.info("Processing chunk: " + str(c_range)
                         + ", chunk shape: " + str(chunk.shape))
@@ -542,6 +554,7 @@ class UFish():
                 chunk, axes=axes, blend_3d=blend_3d,
                 batch_size=batch_size,
                 spots_calling_method=spots_calling_method,
+                is_scale_image=(not scale_whole_img),
                 **kwargs)
             dim_start = [c_range[i][0] for i in range(len(axes))]
             c_df += dim_start
