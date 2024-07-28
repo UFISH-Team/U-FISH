@@ -195,7 +195,6 @@ class UFishNet(nn.Module):
             x = self.upsamples[i](x)
             diffY = encodings[-i - 1].size()[2] - x.size()[2]
             diffX = encodings[-i - 1].size()[3] - x.size()[3]
-            import ipdb; ipdb.set_trace()
             x = F.pad(x, (diffX // 2, diffX - diffX // 2,
                           diffY // 2, diffY - diffY // 2))
             x = torch.cat([x, encodings[-i - 1]], dim=1)
