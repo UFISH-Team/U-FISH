@@ -12,6 +12,7 @@ class UFishCLI():
             device: T.Optional[T.Literal['cpu', 'cuda', 'dml']] = None,
             local_store_path: str = '~/.ufish/',
             weights_file_name: T.Optional[str] = None,
+            bright_field: bool = False,
             ):
         """
         Args:
@@ -21,12 +22,14 @@ class UFishCLI():
                 'dml' is for using AMD GPUs on Windows.
             default_weight_file: The default weight file to use.
             local_store_path: The local path to store the weights.
+            bright_field: Whether the images are bright field images.
         """
         from .api import UFish
         self._ufish = UFish(
             device=device,
             default_weights_file=weights_file_name,
             local_store_path=local_store_path,
+            bright_field=bright_field,
         )
         self._weights_loaded = False
 

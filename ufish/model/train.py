@@ -12,6 +12,11 @@ from ..data import FISHSpotsDataset
 from ..utils.log import logger
 
 
+def dict_to_device(data: T.Dict[str, Tensor], device: torch.device):
+    """Move the data to the device."""
+    return {k: v.to(device) for k, v in data.items()}
+
+
 def training_loop(
         model: torch.nn.Module,
         optimizer: torch.optim.Optimizer,
@@ -106,12 +111,12 @@ def training_loop(
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             torch.save(
-                model.state_dict(),
+                dict_to_device(model.state_dict(), 'cpu'),
                 f"{model_save_dir}/best_model.pth")
             logger.info(f"Best model saved with Val Loss: {val_loss:.4f}")
         if epoch % save_period == 0:
             torch.save(
-                model.state_dict(),
+                dict_to_device(model.state_dict(), 'cpu'),
                 f"{model_save_dir}/model_{epoch}.pth")
             logger.info(f"Model saved at epoch {epoch}.")
 

@@ -25,12 +25,11 @@ class custom_sigmoid(nn.Module):
         return torch.sigmoid(x - self.alpha)
 
 
-
 class DetNet(nn.Module):
     def __init__(self, input_channel: int = 1, alpha: float = .0):
         super(DetNet, self).__init__()
 
-        self.conv1 = ConvNorm(1, 16)
+        self.conv1 = ConvNorm(input_channel, 16)
         self.skip1 = ConvNorm(16, 16)
         self.skip2 = ConvNorm(16, 16)
 

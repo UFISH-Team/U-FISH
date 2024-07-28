@@ -32,7 +32,8 @@ class UFish():
                 T.Literal['cpu', 'cuda', 'dml'],
                 "torch.device"] = None,
             default_weights_file: T.Optional[str] = None,
-            local_store_path: str = '~/.ufish/'
+            local_store_path: str = '~/.ufish/',
+            bright_field: bool = False,
             ) -> None:
         """
         Args:
@@ -42,6 +43,7 @@ class UFish():
                 'dml' is for using AMD GPUs on Windows.
             default_weight_file: The default weight file to use.
             local_store_path: The local path to store the weights.
+            bright_field: Whether the image is bright field.
         """
         self._device = device
         self._infer_mode = False
@@ -54,6 +56,7 @@ class UFish():
         self.local_store_path = Path(
             os.path.expanduser(local_store_path))
         self.weight_path: T.Optional[str] = None
+        self.bright_field = bright_field
 
     @cached_property
     def device(self) -> "torch.device":
@@ -105,8 +108,13 @@ class UFish():
                 'ufish', 'spot_learn', ...
             kwargs: Other arguments for the model.
         """
+        if self.bright_field:
+            assert model_type == 'ufish', \
+                'Bright field mode only supports U-FISH model.'
         if model_type == 'ufish':
             from .model.network.ufish_net import UFishNet
+            if self.bright_field:
+                kwargs['in_channels'] = 3
             self.model = UFishNet(**kwargs)
         elif model_type == 'spot_learn':
             from .model.network.spot_learn import SpotLearn
@@ -271,8 +279,16 @@ class UFish():
         assert self.model is not None
         path = str(path)
         logger.info(f'Loading weights from {path}')
-        state_dict = torch.load(path, map_location=self.device)
+        state_dict = torch.load(path, map_location='cpu')
+        if self.bright_field:
+            first_encoder_weight_key = "encoders.0.conv.conv1.weight"
+            old_weight = state_dict[first_encoder_weight_key]
+            if old_weight.shape[1] == 1:
+                # change torch.Size([32, 1, 3, 3]) to torch.Size([32, 3, 3, 3])
+                new_weight = old_weight.repeat(1, 3, 1, 1)
+                state_dict[first_encoder_weight_key] = new_weight
         self.model.load_state_dict(state_dict)
+        self.model = self.model.to(self.device)
         self.ort_session = None
 
     def _load_onnx(
@@ -317,8 +333,7 @@ class UFish():
         assert self.model is not None
         import torch
         tensor = torch.from_numpy(img).float()
-        if self.device.type == 'cuda':
-            tensor = tensor.cuda()
+        tensor = tensor.to(self.device)
         with torch.no_grad():
             output = self.model(tensor)
         output = output.detach().cpu().numpy()
@@ -460,24 +475,35 @@ class UFish():
             infer_img_axes, check_img_axes,
             map_predfunc_to_img
         )
-        if axes is None:
-            logger.info("Axes not specified, infering from image shape.")
-            axes = infer_img_axes(img.shape)
-            logger.info(f"Infered axes: {axes}, image shape: {img.shape}")
-        check_img_axes(img, axes)
         if not isinstance(img, np.ndarray):
             img = np.array(img)
-        predfunc = partial(
-            self._pred_2d_or_3d,
-            blend_3d=blend_3d,
-            batch_size=batch_size,
-            spots_calling_method=spots_calling_method,
-            **kwargs,
-            )
-        df, enhanced_img = map_predfunc_to_img(
-            predfunc, img, axes)
-        if enh_img is not None:
-            enh_img[:] = enhanced_img
+        if self.bright_field:
+            assert img.ndim == 3, 'Bright field image must be 3D.'
+            if np.argmin(img.shape) == 2:
+                img = np.moveaxis(img, -1, 0)
+            assert 0 <= img.max() <= 255, 'Image must be in 0-255 range.'
+            img = 255.0 - img
+            axes = 'cyx'
+            enhanced_img = self.infer(img[np.newaxis])[0, 0]
+            df = self.call_spots(
+                enhanced_img, method=spots_calling_method, **kwargs)
+        else:
+            if axes is None:
+                logger.info("Axes not specified, infering from image shape.")
+                axes = infer_img_axes(img.shape)
+                logger.info(f"Infered axes: {axes}, image shape: {img.shape}")
+            check_img_axes(img, axes)
+            predfunc = partial(
+                self._pred_2d_or_3d,
+                blend_3d=blend_3d,
+                batch_size=batch_size,
+                spots_calling_method=spots_calling_method,
+                **kwargs,
+                )
+            df, enhanced_img = map_predfunc_to_img(
+                predfunc, img, axes)
+            if enh_img is not None:
+                enh_img[:] = enhanced_img
         return df, enhanced_img
 
     def predict_chunks(

@@ -23,11 +23,19 @@ class Reader:
     def __getitem__(self, idx: int):
         pass
 
-    def read_coords(self, path: str, ndim: int) -> np.ndarray:
+    def read_coords(self, path: str) -> np.ndarray:
         coordinates = pd.read_csv(path)
-        axes = [f'axis-{i}' for i in range(ndim)]
+        axes = [col for col in coordinates.columns if col.startswith('axis-')]
         coords = coordinates[axes].values
         return coords
+
+    def read_image(self, path: str) -> np.ndarray:
+        img = imread(path)
+        if img.ndim == 3:
+            img = np.moveaxis(img, -1, 0)
+        elif img.ndim == 2:
+            img = np.expand_dims(img, axis=0)
+        return img
 
 
 class FileReader(Reader):
@@ -42,9 +50,9 @@ class FileReader(Reader):
 
     def __getitem__(self, idx: int):
         img_path = os.path.join(self.root_dir, self.meta_data.iloc[idx, 0])
-        image = imread(img_path)
+        image = self.read_image(img_path)
         coord_path = os.path.join(self.root_dir, self.meta_data.iloc[idx, 1])
-        coords = self.read_coords(coord_path, image.ndim)
+        coords = self.read_coords(coord_path)
         sample = {'image': image, 'coords': coords}
         return sample
 
@@ -102,8 +110,8 @@ class DirReader(Reader):
     def __getitem__(self, idx: int):
         img_path = self.img_paths[idx]
         coord_path = self.coord_paths[idx]
-        image = imread(img_path)
-        coords = self.read_coords(str(coord_path), image.ndim)
+        image = self.read_image(str(img_path))
+        coords = self.read_coords(str(coord_path))
         sample = {'image': image, 'coords': coords}
         return sample
 
@@ -155,9 +163,8 @@ class FISHSpotsDataset(Dataset):
     def __getitem__(self, idx: int):
         data = self.reader[idx]
         image, coords = data['image'], data['coords']
-        target = self.coords_to_target(coords, image.shape)
+        target = self.coords_to_target(coords, image.shape[-2:])
         image = scale_image(image)
-        image = np.expand_dims(image, axis=0)
         sample = {'image': image, 'target': target}
         if self.transform:
             sample = self.transform(sample)

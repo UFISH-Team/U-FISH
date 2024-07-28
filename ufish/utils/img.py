@@ -22,7 +22,6 @@ def scale_image(
         warning: Whether to print a warning message.
     """
     dtype = img.dtype
-    img = img.astype(np.float32)
     if dtype is not np.uint8:
         big_value = np.quantile(img, big_quantile)
         if img_has_outlier(img, big_value):
@@ -38,6 +37,7 @@ def scale_image(
             in_range=in_range,
             out_range=(0, 255),
         )
+    img = img.astype(np.float32)
     return img
 
 
