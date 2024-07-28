@@ -737,6 +737,7 @@ class UFish():
             dataset = FISHSpotsDataset.from_meta_csv(
                 root_dir=str(root_dir), meta_csv_path=str(_path),
                 process_func=process_func, transform=transform)
+        dataset.bright_field = self.bright_field
         return dataset
 
     def train(

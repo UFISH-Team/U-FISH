@@ -120,17 +120,21 @@ class FISHSpotsDataset(Dataset):
     def __init__(
             self, reader: Reader,
             process_func: T.Optional[T.Callable] = None,
+            bright_field: bool = False,
             transform=None):
         """FISH spots dataset.
 
         Args:
             reader: The reader to read images and coordinates.
             process_func: The function to process the target image.
+            bright_field: Whether the images are bright field images.
+                If True, the images will be inverted (255 - image).
             transform: The transform to apply to the samples.
         """
         self.reader = reader
         self.transform = transform
         self.process_func = process_func
+        self.bright_field = bright_field
 
     @staticmethod
     def gaussian_filter(mask: np.ndarray, sigma=1) -> np.ndarray:
@@ -163,6 +167,12 @@ class FISHSpotsDataset(Dataset):
     def __getitem__(self, idx: int):
         data = self.reader[idx]
         image, coords = data['image'], data['coords']
+        if self.bright_field:
+            assert 0 <= image.min() and image.max() <= 255.0, \
+                "Image must be in the range [0, 255]."
+            assert len(image.shape) == 3, "Image must have 3 dimensions."
+            assert image.shape[0] == 3, "Image must have 3 channels."
+            image = 255.0 - image
         target = self.coords_to_target(coords, image.shape[-2:])
         image = scale_image(image)
         sample = {'image': image, 'target': target}
