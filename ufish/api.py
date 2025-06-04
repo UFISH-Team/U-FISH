@@ -114,6 +114,12 @@ class UFish():
         elif model_type == 'det_net':
             from .model.network.det_net import DetNet
             self.model = DetNet(**kwargs)
+        elif model_type.endswith('.py'):
+            with open(model_type, 'r') as f:
+                code = f.read()
+            vars = {}
+            exec(code, vars, vars)
+            self.model = vars['Net'](**kwargs)
         else:
             raise ValueError(f'Unknown model type: {model_type}')
         params = sum(p.numel() for p in self.model.parameters())
@@ -727,6 +733,7 @@ class UFish():
             argu_prob: float = 0.5,
             num_epochs: int = 50,
             batch_size: int = 8,
+            optimizer_type: str = "Adam",
             lr: float = 1e-3,
             summary_dir: str = "runs/ufish",
             model_save_dir: str = "./models",
@@ -755,6 +762,7 @@ class UFish():
             argu_prob: The probability to use data augmentation.
             num_epochs: The number of epochs to train.
             batch_size: The batch size.
+            optimizer_type: The optimizer type.
             lr: The learning rate.
             summary_dir: The directory to save the TensorBoard summary to.
             model_save_dir: The directory to save the model to.
@@ -818,6 +826,7 @@ class UFish():
             loader_workers=loader_workers,
             num_epochs=num_epochs,
             batch_size=batch_size,
+            optimizer_type=optimizer_type,
             lr=lr,
             summary_dir=summary_dir,
             model_save_dir=model_save_dir,

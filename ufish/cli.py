@@ -459,7 +459,9 @@ class UFishCLI():
                 )
         out_df = pd.DataFrame(out)
         mean_f1 = out_df['f1(cutoff=3)'].mean()
+        median_f1 = out_df['f1(cutoff=3)'].median()
         logger.info(f'Mean f1(cutoff=3): {mean_f1:.4f}')
+        logger.info(f'Median f1(cutoff=3): {median_f1:.4f}')
         logger.info(f'Saving results to {output_table_path}')
         out_df.to_csv(output_table_path, index=False)
 
@@ -478,6 +480,7 @@ class UFishCLI():
             num_epochs: int = 50,
             batch_size: int = 8,
             lr: float = 1e-3,
+            optimizer_type: str = "Adam",
             summary_dir: str = "runs/ufish",
             model_save_dir: str = "./models",
             save_period: int = 5,
@@ -505,6 +508,7 @@ class UFishCLI():
             num_epochs: The number of epochs to train.
             batch_size: The batch size.
             lr: The learning rate.
+            optimizer_type: The optimizer type.
             summary_dir: The directory to save the TensorBoard summary to.
             model_save_dir: The directory to save the model to.
             save_period: Save the model every `save_period` epochs.
@@ -523,6 +527,7 @@ class UFishCLI():
             num_epochs=num_epochs,
             batch_size=batch_size,
             lr=lr,
+            optimizer_type=optimizer_type,
             summary_dir=summary_dir,
             model_save_dir=model_save_dir,
             save_period=save_period,
