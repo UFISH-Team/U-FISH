@@ -47,8 +47,6 @@ make clean
 - `user_guide.rst` - Comprehensive user guide
 - `api_reference.rst` - API documentation
 - `cli_reference.rst` - CLI documentation
-- `tutorials.rst` - Step-by-step tutorials
-- `benchmarks.rst` - Performance benchmarks
 - `contributing.rst` - Contribution guidelines
 - `changelog.rst` - Version history
 - `conf.py` - Sphinx configuration

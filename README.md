@@ -6,6 +6,15 @@ U-FISH is an advanced FISH spot calling algorithm based on deep learning. The "U
   <a href="https://pypi.org/project/ufish/">
     <img src="https://img.shields.io/pypi/v/ufish.svg" alt="Install with PyPI" />
   </a>
+  <a href="https://u-fish.readthedocs.io/en/latest/">
+    <img src="https://readthedocs.org/projects/u-fish/badge/?version=latest" alt="Documentation Status" />
+  </a>
+  <a href="https://www.napari-hub.org/plugins/napari-ufish">
+    <img src="https://img.shields.io/badge/napari-hub-00bfff" alt="Napari Hub" />
+  </a>
+  <a href="https://ufish-team.github.io/">
+    <img src="https://img.shields.io/badge/Web_App-Live-brightgreen" alt="Web Application" />
+  </a>
 </p>
 
 ![title](./docs/ufish.png)
@@ -176,4 +185,4 @@ git clone https://huggingface.co/datasets/GangCaoLab/FISH_spots
   - [x] Napari plugin
   - [x] Web page
 - [x] Benchmarks
-- [ ] Documentation
+- [x] Documentation

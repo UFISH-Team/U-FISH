@@ -158,12 +158,4 @@ Training data should be organized as:
    └── labels/
        ├── image001.csv  # Columns: y, x, (z if 3D)
        ├── image002.csv
-       └── ...
-
-Next Steps
-----------
-
-* Read the :doc:`user_guide` for detailed information
-* Check out :doc:`tutorials` for specific use cases
-* Explore the :doc:`api_reference` for advanced features
-* Learn about :doc:`cli_reference` for batch processing 
+       └── ... 
