@@ -1,0 +1,17 @@
+# Sphinx build directory
+_build/
+_static/
+_templates/
+
+# Auto-generated API documentation
+api/generated/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*~
+.vscode/
+.idea/ 
