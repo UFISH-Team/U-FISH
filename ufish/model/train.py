@@ -124,6 +124,7 @@ def train_on_dataset(
         valid_dataset: FISHSpotsDataset,
         device: T.Optional[torch.device] = None,
         loss_type: str = "DiceRMSELoss",
+        optimizer_type: str = "Adam",
         loader_workers: int = 4,
         num_epochs: int = 50,
         batch_size: int = 8,
@@ -167,7 +168,17 @@ def train_on_dataset(
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info(f"Training using device: {device}")
     model = model.to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+
+    if optimizer_type == "Adam":
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    elif optimizer_type == "SGD":
+        optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+    elif optimizer_type == "RMSprop":
+        optimizer = torch.optim.RMSprop(model.parameters(), lr=lr)
+    elif optimizer_type == "AdamW":
+        optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
+    else:
+        raise ValueError(f"Unknown optimizer type: {optimizer_type}")
 
     criterion = eval(f"loss_mod.{loss_type}")()
 
