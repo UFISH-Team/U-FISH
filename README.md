@@ -15,6 +15,7 @@ U-FISH is an advanced FISH spot calling algorithm based on deep learning. The "U
   <a href="https://ufish-team.github.io/">
     <img src="https://img.shields.io/badge/Web_App-Live-brightgreen" alt="Web Application" />
   </a>
+  <a href="https://doi.org/10.5281/zenodo.16746696"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.16746696.svg" alt="DOI"></a>
 </p>
 
 ![title](./docs/ufish.png)
