@@ -15,7 +15,10 @@ U-FISH is an advanced FISH spot calling algorithm based on deep learning. The "U
   <a href="https://ufish-team.github.io/">
     <img src="https://img.shields.io/badge/Web_App-Live-brightgreen" alt="Web Application" />
   </a>
-  <a href="https://doi.org/10.5281/zenodo.16746696"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.16746696.svg" alt="DOI"></a>
+  <a href="https://doi.org/10.5281/zenodo.16746696"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.16746696.svg" alt="DOI" /></a>
+  <a href="https://genomebiology.biomedcentral.com/articles/10.1186/s13059-025-03736-x">
+    <img src="https://img.shields.io/badge/any_text-you_like-blue" alt="Genome Biology" />
+  </a>
 </p>
 
 ![title](./docs/ufish.png)
@@ -148,42 +151,8 @@ git lfs install
 git clone https://huggingface.co/datasets/GangCaoLab/FISH_spots
 ```
 
-## TODO List
 
-**Work in progress**
-
-- [x] API
-  - [x] Inference
-  - [x] Evaluation
-  - [x] Plotting tool for show TP, FP, FN
-  - [x] Training
-- [x] CLI
-  - [x] Inference
-  - [x] Evaluation
-  - [x] Plotting tool for show TP, FP, FN
-  - [x] Training
-- [x] Add more datasets
-  - [x] ExSeq
-  - [x] MER-FISH
-  - [x] seqFISH
-- [x] Try other signal footprint
-  - [x] Gaussian
-  - [x] Single pixel prediction
-- [x] Support for multi-channel images.
-- [x] 3D integration method
-  - [x] Stack 2D UEI to 3D, then apply local maxima.
-  - [x] 3D blending: apply to xy, xz, yz planes, then blend.
-- [x] Support for image chunks and zarr file format.
-  - [x] Inference chunk by chunk.
-  - [x] Read image from zarr/n5/ome-zarr file.
-  - [x] Write UEI to zarr/n5/ome-zarr file.
-- [ ] deploy
-  - [x] setup.py
-  - [x] upload model weights to huggingface
-  - [x] upload package to PyPI
-  - [ ] Upload to BioImageIO model zoo
-- GUI
-  - [x] Napari plugin
-  - [x] Web page
-- [x] Benchmarks
-- [x] Documentation
+## Citation
+```
+Xu W, Cai H, Zhang Q, et al. U-FISH: a fluorescent spot detector for imaging-based spatial-omics analysis and AI-assisted FISH diagnosis.[J]. Genome Biology, 2024: 2025.09.
+```
