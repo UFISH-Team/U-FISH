@@ -17,7 +17,7 @@ U-FISH is an advanced FISH spot calling algorithm based on deep learning. The "U
   </a>
   <a href="https://doi.org/10.5281/zenodo.16746696"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.16746696.svg" alt="DOI" /></a>
   <a href="https://genomebiology.biomedcentral.com/articles/10.1186/s13059-025-03736-x">
-    <img src="https://img.shields.io/badge/any_text-you_like-blue" alt="Genome Biology" />
+    <img src="https://img.shields.io/badge/publication-genome_biology-blue" alt="Genome Biology" />
   </a>
 </p>
 
