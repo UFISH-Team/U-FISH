@@ -156,3 +156,18 @@ git clone https://huggingface.co/datasets/GangCaoLab/FISH_spots
 ```
 Xu W, Cai H, Zhang Q, et al. U-FISH: a fluorescent spot detector for imaging-based spatial-omics analysis and AI-assisted FISH diagnosis.[J]. Genome Biology, 2024: 2025.09.
 ```
+
+BibTeX
+
+```
+@article{xu2025u,
+  title={U-FISH: a fluorescent spot detector for imaging-based spatial-omics analysis and AI-assisted FISH diagnosis},
+  author={Xu, Weize and Cai, Huaiyuan and Zhang, Qian and Wang, Zhengze and Yang, Jiajun and Wu, Xiaofeng and Li, Chengwen and Cui, Chenghua and Liu, Changzhi and He, Jin and others},
+  journal={Genome Biology},
+  volume={26},
+  number={1},
+  pages={261},
+  year={2025},
+  publisher={Springer}
+}
+```
