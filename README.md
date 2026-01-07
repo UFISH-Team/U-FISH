@@ -32,7 +32,7 @@ Key points about U-FISH:
 
 1. Diverse dataset: 4000+ images with approximately 1.6 million targets from seven sources, including 2 simulated datasets and 5 real datasets.
 2. Small model: Achieve state-of-the-art performace with only 160k parameters (ONNX file size: 680kB).
-3. 3D support: Support detection FIHS spots in 3D images.
+3. 3D support: Support detection FISH spots in 3D images.
 4. Scalability: Support large-scale data storage formats: OME-Zarr and N5.
 5. User-friendly interface: API, CLI, [Napari plugin](https://github.com/UFISH-Team/napari-ufish), and [web application](https://github.com/UFISH-Team/ufish-web).
 
